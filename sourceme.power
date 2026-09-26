@@ -1,0 +1,6 @@
+# Build environment on power (inside the vivado:2 container, see
+# /data/claude/fwbuild/fpga-build.sh): Vivado 2023.1 in /data/claude/Xilinx.
+source /data/claude/Xilinx/Vivado/2023.1/settings64.sh
+export ADI_IGNORE_VERSION_CHECK=1
+# Vivado's JRE crashes on cgroup v2 hosts
+export JAVA_TOOL_OPTIONS=-XX:-UseContainerSupport

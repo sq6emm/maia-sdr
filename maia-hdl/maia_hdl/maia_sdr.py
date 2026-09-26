@@ -85,11 +85,14 @@ class MaiaSDR(Elaboratable):
                           Shape.cast(RecorderMode).width, 0),
                     Field('dropped_samples', Access.R, 1, 0),
                 ]),
-                0b1: Register('recorder_next_address', [
+                0b01: Register('recorder_next_address', [
                     Field('next_address', Access.R, 32, 0),
                 ]),
+                0b10: Register('recorder_committed_address', [
+                    Field('committed_address', Access.R, 32, 0),
+                ]),
             },
-            1)
+            2)
         self.spectrometer = Spectrometer(
             config.spectrometer_address,
             config.spectrometer_buffers.bit_length() - 1,
@@ -98,7 +101,7 @@ class MaiaSDR(Elaboratable):
             config.recorder_address_range[0],
             config.recorder_address_range[1],
             dma_name='m_axi_recorder', domain_in='sync',
-            domain_dma='s_axi_lite')
+            domain_dma='s_axi_lite', ring=config.recorder_ring)
         self.ddc = DDC('clk3x')
         if config.Enable_RawFFT:
             self.raw_fft = TopFFT()
@@ -515,10 +518,6 @@ class MaiaSDR(Elaboratable):
 
         # Recorder
         m.d.comb += [
-            # sync domain
-            self.recorder.strobe_in.eq(spectrometer_strobe_in),
-            self.recorder.re_in.eq(spectrometer_re_in),
-            self.recorder.im_in.eq(spectrometer_im_in),
             # s_axi_lite domain
             self.recorder.mode.eq(
                 self.recorder_registers['recorder_control']['mode']),
@@ -530,7 +529,22 @@ class MaiaSDR(Elaboratable):
                 self.recorder.dropped_samples),
             (self.recorder_registers['recorder_next_address']
              ['next_address'].eq(self.recorder.next_address)),
+            (self.recorder_registers['recorder_committed_address']
+             ['committed_address'].eq(self.recorder.committed_address)),
         ]
+        # sync domain
+        if self.config.recorder_from_ddc:
+            m.d.comb += [
+                self.recorder.strobe_in.eq(self.ddc.strobe_out),
+                self.recorder.re_in.eq(self.ddc.re_out),
+                self.recorder.im_in.eq(self.ddc.im_out),
+            ]
+        else:
+            m.d.comb += [
+                self.recorder.strobe_in.eq(spectrometer_strobe_in),
+                self.recorder.re_in.eq(spectrometer_re_in),
+                self.recorder.im_in.eq(spectrometer_im_in),
+            ]
 
         # DDC
         m.d.comb += [

@@ -23,6 +23,10 @@ class MaiaSDRConfig:
 
         # IQ recorder
         self.recorder_address_range = (0x0100_0000, 0x1a00_0000)
+        # Ring buffer instead of one-shot recording (see DmaStreamWrite).
+        self.recorder_ring = False
+        # Record the DDC output always, not whatever the spectrometer sees.
+        self.recorder_from_ddc = False
         self.Enable_RawFFT = False
 
 

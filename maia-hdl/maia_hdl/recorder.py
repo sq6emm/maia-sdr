@@ -50,6 +50,8 @@ class Recorder16IQ(Elaboratable):
         Clock domain for the IQ samples.
     domain_dma : str
         Clock domain for the DMA and control interface.
+    ring : bool
+        Record into a ring buffer until stopped (see ``DmaStreamWrite``).
 
     Attributes
     ----------
@@ -79,10 +81,13 @@ class Recorder16IQ(Elaboratable):
        After the DMA is finished, this contains the next address that would
        have been written to. This can be used to obtain the length of the
        recording when ``stop`` was used.
+    committed_address : Signal(), out
+       Live: everything written before this address is in memory (ring
+       mode: the reader's write pointer).
     """
     def __init__(self, start_address, end_address, dma_name=None,
                  axi_awidth=32,
-                 domain_in='sync', domain_dma='sync'):
+                 domain_in='sync', domain_dma='sync', ring=False):
         self.domain_in = domain_in
         self.domain_dma = domain_dma
 
@@ -98,17 +103,18 @@ class Recorder16IQ(Elaboratable):
         self.finished = Signal()
         self.dropped_samples = Signal()
         self.next_address = Signal(axi_awidth)
+        self.committed_address = Signal(axi_awidth)
 
         self.dma_renamer = DomainRenamer({'sync': self.domain_dma})
         self.dma = self.dma_renamer(
             DmaStreamWrite(start_address, end_address, name=dma_name,
-                           axi_awidth=axi_awidth))
+                           axi_awidth=axi_awidth, ring=ring))
 
     def ports(self):
         return [
             self.strobe_in, self.re_in, self.im_in,
             self.mode.as_value(), self.start, self.stop, self.finished,
-            self.dropped_samples, self.next_address,
+            self.dropped_samples, self.next_address, self.committed_address,
         ] + self.dma.axi.ports()
 
     def elaborate(self, platform):
@@ -222,6 +228,7 @@ class Recorder16IQ(Elaboratable):
             dma.stop.eq(self.stop),
             self.finished.eq(dma.finished),
             self.next_address.eq(dma.next_address),
+            self.committed_address.eq(dma.committed_address),
         ]
 
         return m

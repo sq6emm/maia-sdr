@@ -206,6 +206,10 @@ class DmaStreamWrite(Elaboratable):
         Address width of the AXI3 port.
     name : Optional[str]
         Name for the AXI3 Manager interface.
+    ring : bool
+        Ring buffer mode: instead of stopping at the end address, the DMA
+        wraps around to the start address and keeps writing until stopped.
+        Software follows it with ``committed_address``.
 
     Attributes
     ----------
@@ -228,6 +232,10 @@ class DmaStreamWrite(Elaboratable):
     next_address : Signal(), out
        After the DMA is finished, this contains the next address that would
        have been written to.
+    committed_address : Signal(), out
+       The address following the last burst whose write response has been
+       received: everything before it (back to where the ring was when the
+       transfer started) is in memory. Wraps like the ring.
     stream_data : Signal(width), in
        Stream data input.
     stream_valid : Signal(), in
@@ -236,7 +244,8 @@ class DmaStreamWrite(Elaboratable):
        Stream ready. Semantics are as in AXI4-Stream.
     """
     def __init__(self, start_address, end_address, width=64, axi_awidth=32,
-                 name=None):
+                 name=None, ring=False):
+        self.ring = ring
         self.start_address = start_address
         self.end_address = end_address
         self.w = width
@@ -249,6 +258,7 @@ class DmaStreamWrite(Elaboratable):
         self.stop = Signal()
         self.finished = Signal()
         self.next_address = Signal(axi_awidth)
+        self.committed_address = Signal(axi_awidth)
         # Stream ports
         self.stream_data = Signal(width)
         self.stream_valid = Signal()
@@ -284,17 +294,25 @@ class DmaStreamWrite(Elaboratable):
         addr_counter_end = Signal()
         b = bin(self.end_address >> addr_shift)
         r = len(b) - len(b.rstrip('0'))  # number of zeros on the right
+        last_burst = (self.end_address >> addr_shift) - 1
         m.d.comb += [
             self.next_address.eq(self.axi.awaddr),
             self.axi.awaddr.eq(axi_addr_counter << addr_shift),
-            addr_counter_end.eq(
-                axi_addr_counter[r:]
-                == (self.end_address >> (addr_shift + r))),
             self.axi.awvalid.eq(
                 running & ~two_outstanding_bursts & ~addr_counter_end),
         ]
+        if not self.ring:
+            m.d.comb += addr_counter_end.eq(
+                axi_addr_counter[r:]
+                == (self.end_address >> (addr_shift + r)))
         with m.If(self.axi.aw_handshake()):
-            m.d.sync += axi_addr_counter.eq(axi_addr_counter + 1)
+            if self.ring:
+                with m.If(axi_addr_counter == last_burst):
+                    m.d.sync += axi_addr_counter.eq(axi_addr_counter_reset)
+                with m.Else():
+                    m.d.sync += axi_addr_counter.eq(axi_addr_counter + 1)
+            else:
+                m.d.sync += axi_addr_counter.eq(axi_addr_counter + 1)
             with m.If(~(self.axi.w_handshake() & self.axi.wlast)):
                 # increase number of outstanding bursts
                 m.d.sync += [
@@ -321,6 +339,15 @@ class DmaStreamWrite(Elaboratable):
             self.axi.wlast.eq(last_beat),
         ]
         m.d.sync += self.axi.bready.eq(1)
+
+        # Bursts complete in order (one ID): count write responses.
+        committed_counter = Signal.like(axi_addr_counter)
+        m.d.comb += self.committed_address.eq(committed_counter << addr_shift)
+        with m.If(self.axi.bvalid & self.axi.bready):
+            with m.If(committed_counter == last_burst):
+                m.d.sync += committed_counter.eq(axi_addr_counter_reset)
+            with m.Else():
+                m.d.sync += committed_counter.eq(committed_counter + 1)
 
         # outstanding write response control
         max_outstanding_b_log2 = 2
@@ -358,6 +385,7 @@ class DmaStreamWrite(Elaboratable):
             m.d.sync += [
                 running.eq(1),
                 axi_addr_counter.eq(axi_addr_counter_reset),
+                committed_counter.eq(axi_addr_counter_reset),
             ]
         one_outstanding_burst_q = Signal()
         no_outstanding_b_q = Signal(init=1)
