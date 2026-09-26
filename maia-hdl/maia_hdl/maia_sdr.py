@@ -23,6 +23,8 @@ from .pluto_platform import PlutoPlatform
 from .register import Access, Field, Registers, Register, RegisterMap
 from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
+from .symsync import SymSync
+from .hdrdet import HdrDet
 from .topfft import TopFFT
 
 # IP core version
@@ -208,7 +210,25 @@ class MaiaSDR(Elaboratable):
                               1,
                               0),
                     ]),
+                **({
+                    0b110: Register(
+                        'datv_symsync',
+                        [
+                            Field('enable', Access.RW, 1, 0),
+                            Field('kp_shift', Access.RW, 5, 7),
+                            Field('ki_shift', Access.RW, 5, 13),
+                            Field('hdrdet', Access.RW, 1, 0),
+                        ]),
+                    0b111: Register(
+                        'datv_omega',
+                        [
+                            Field('omega', Access.RW, 32, 0),
+                        ]),
+                } if config.datv_symsync else {}),
             }, 3)
+        if config.datv_symsync:
+            self.symsync = SymSync()
+            self.hdrdet = HdrDet()
         metadata = {
             'vendor': 'Daniel Estevez',
             'vendorID': 'destevez.net',
@@ -533,7 +553,32 @@ class MaiaSDR(Elaboratable):
              ['committed_address'].eq(self.recorder.committed_address)),
         ]
         # sync domain
-        if self.config.recorder_from_ddc:
+        if self.config.recorder_from_ddc and self.config.datv_symsync:
+            m.submodules.symsync = symsync = self.symsync
+            m.submodules.hdrdet = hdrdet = self.hdrdet
+            m.d.comb += [
+                symsync.enable.eq(
+                    self.sdr_registers['datv_symsync']['enable']),
+                symsync.kp_shift.eq(
+                    self.sdr_registers['datv_symsync']['kp_shift']),
+                symsync.ki_shift.eq(
+                    self.sdr_registers['datv_symsync']['ki_shift']),
+                symsync.omega_nom.eq(
+                    self.sdr_registers['datv_omega']['omega']),
+                symsync.strobe_in.eq(self.ddc.strobe_out),
+                symsync.re_in.eq(self.ddc.re_out),
+                symsync.im_in.eq(self.ddc.im_out),
+                hdrdet.enable.eq(
+                    self.sdr_registers['datv_symsync']['enable']
+                    & self.sdr_registers['datv_symsync']['hdrdet']),
+                hdrdet.strobe_in.eq(symsync.strobe_out),
+                hdrdet.re_in.eq(symsync.re_out),
+                hdrdet.im_in.eq(symsync.im_out),
+                self.recorder.strobe_in.eq(hdrdet.strobe_out),
+                self.recorder.re_in.eq(hdrdet.re_out),
+                self.recorder.im_in.eq(hdrdet.im_out),
+            ]
+        elif self.config.recorder_from_ddc:
             m.d.comb += [
                 self.recorder.strobe_in.eq(self.ddc.strobe_out),
                 self.recorder.re_in.eq(self.ddc.re_out),

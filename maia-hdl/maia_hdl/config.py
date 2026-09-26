@@ -27,6 +27,9 @@ class MaiaSDRConfig:
         self.recorder_ring = False
         # Record the DDC output always, not whatever the spectrometer sees.
         self.recorder_from_ddc = False
+        # DATV: symbol timing recovery between the DDC and the recorder
+        # (symsync.py; registers sdr 0b110 / 0b111).
+        self.datv_symsync = False
         self.Enable_RawFFT = False
 
 

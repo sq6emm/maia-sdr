@@ -40,6 +40,7 @@ def maia_iio_lite_datv():
     config.recorder_address_range = (0x1610_0000, 0x1620_0000)
     config.recorder_ring = True
     config.recorder_from_ddc = True
+    config.datv_symsync = True
     # Tells software (version register bits 31:24) that the recorder is this
     # ring: with any other core, starting the recorder writes outside the
     # reserved memory.
