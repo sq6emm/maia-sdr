@@ -33,12 +33,14 @@ if {$project_name eq "plutoskyr2"} {
     "$::tezuka_hdl_dir/boards/$project_name/system_constr.xdc" \
     "plutoskyr2_simple.xdc" \
     "bitstream.xdc" \
+    "datv.xdc" \
     "$ad_hdl_dir/library/common/ad_iobuf.v"]
 } else {
   adi_project_files $project_name [list \
     "$::tezuka_hdl_dir/boards/$project_name/system_top.v" \
     "$::tezuka_hdl_dir/boards/$project_name/system_constr.xdc" \
     "bitstream.xdc" \
+    "datv.xdc" \
     "$ad_hdl_dir/library/common/ad_iobuf.v"]
 }
 
