@@ -74,8 +74,11 @@ def nco_tables():
 
 
 def new_fft():
+    # Plain complex multipliers (3 DSPs a twiddle): the single-multiplier
+    # 3x-clock version (cmult3x) gave wrong FFTs on the board with a sample
+    # only every ~34 clocks (the spectrometer feeds one every clock).
     return FFT(16, ORDER, 2, width_twiddle=16, truncates=TRUNCATES,
-               use_bram_reg=True, cmult3x=True, domain_3x='clk3x')
+               use_bram_reg=True)
 
 
 def pack(re, im, header, carrier):
@@ -222,6 +225,9 @@ class T2Ofdm(Elaboratable):
         self.track = Signal(8)
         self.freq = Signal(32)
         self.shift = Signal(3)
+        # debug: every sample raw, schedule or not (FFTs checkable against
+        # the raw samples)
+        self.raw_always = Signal()
         self.counter = Signal(32)    # out
         self.frames = Signal(22)     # out
         self.overflow = Signal()     # out, sticky until disabled
@@ -240,7 +246,6 @@ class T2Ofdm(Elaboratable):
         self.fft_rst = Signal()
         fft = ResetInserter(self.fft_rst)(self.fft)
         m.submodules.fft = fft
-        m.d.comb += fft.common_edge_3x.eq(self.common_edge_3x)
 
         # NCO tables
         cos_t, sin_t = nco_tables()
@@ -321,8 +326,8 @@ class T2Ofdm(Elaboratable):
                     lo = self.gi - self.early
                     with m.If((q >= lo) & (q < lo + N)):
                         m.d.comb += in_win.eq(1)
-            m.d.sync += [s1_raw.eq(is_raw), s1_win.eq(in_win)]
-            with m.If(is_raw):
+            m.d.sync += [s1_raw.eq(is_raw | self.raw_always), s1_win.eq(in_win)]
+            with m.If(is_raw | self.raw_always):
                 m.d.sync += [s1_head.eq(run_len[:16] == 0),
                              run_len.eq(run_len + 1)]
             with m.Else():

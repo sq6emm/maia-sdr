@@ -15,7 +15,8 @@ from maia_hdl.t2ofdm import T2Ofdm, Model, t2_active_bins
 from .amaranth_sim import AmaranthSim
 from .common_edge import CommonEdgeTb
 
-GAP = 6   # cycles between samples (34 on the board)
+import os
+GAP = int(os.environ.get("T2GAP", "6"))   # cycles between samples (34 on the board)
 
 
 class TestT2Ofdm(AmaranthSim):
@@ -32,7 +33,7 @@ class TestT2Ofdm(AmaranthSim):
         raw_m, car_m = Model(t2_active_bins()).run(x, events)
 
         ofdm = T2Ofdm()
-        self.dut = CommonEdgeTb(ofdm, [('clk3x', 3, 'common_edge_3x')])
+        self.dut = ofdm
         got = []
 
         async def tick(ctx):
@@ -66,7 +67,7 @@ class TestT2Ofdm(AmaranthSim):
                 await tick(ctx)
             self.assertEqual(ctx.get(ofdm.overflow), 0)
 
-        self.simulate(bench, named_clocks={'clk3x': 4e-9})
+        self.simulate(bench)
         raw_h = [w for w in got if not w & (1 << 16)]
         car_h = [w for w in got if w & (1 << 16)]
         import os

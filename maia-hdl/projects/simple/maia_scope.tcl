@@ -39,6 +39,9 @@ ad_connect util_ad9361_adc_fifo/dout_data_0 adc_i_slice/Din
 ad_connect util_ad9361_adc_fifo/dout_data_1 adc_q_slice/Din
 ad_connect adc_i_slice/Dout maia_sdr/re_in
 ad_connect adc_q_slice/Dout maia_sdr/im_in
+# Only cycles with a sample (the sampling clock runs faster than the samples
+# come: without this about 1 % of them went in twice).
+ad_connect util_ad9361_adc_fifo/dout_valid_0 maia_sdr/valid_in
 
 ad_connect maia_sdr/sampling_clk util_ad9361_divclk/clk_out
 ad_connect sys_cpu_clk maia_sdr/s_axi_lite_clk

@@ -249,6 +249,7 @@ class MaiaSDR(Elaboratable):
                         Field('scheduled', Access.RW, 1, 0),
                         Field('load', Access.Wpulse, 1, 0),
                         Field('shift', Access.RW, 3, 0),
+                        Field('raw_always', Access.RW, 1, 0),
                     ]),
                     0b001: Register('t2_frame_len', [
                         Field('frame_len', Access.RW, 20, 0),
@@ -273,6 +274,7 @@ class MaiaSDR(Elaboratable):
                     0b111: Register('t2_status', [
                         Field('frames', Access.R, 22, 0),
                         Field('overflow', Access.R, 1, 0),
+                        Field('resamp_overflow', Access.R, 1, 0),
                     ]),
                 }, 3)
         metadata = {
@@ -295,6 +297,10 @@ class MaiaSDR(Elaboratable):
         self.iq_in_width = 12
         self.re_in = Signal(self.iq_in_width)
         self.im_in = Signal(self.iq_in_width)
+        # The ADC FIFO's valid (DATV cores): the sampling clock does not have
+        # a new sample every cycle; without it about 1 % of the samples came
+        # in twice (fatal to DVB-T2's OFDM).
+        self.valid_in = Signal(init=1)
         self.interrupt_out = Signal()
         self.clk_fastlock_out = Signal()
         self.fastlock_profile_in = Signal(3)
@@ -316,6 +322,9 @@ class MaiaSDR(Elaboratable):
             + [
                 self.re_in,
                 self.im_in,
+            ]
+            + ([self.valid_in] if self.config.datv_symsync else [])
+            + [
                 self.interrupt_out,
                 self.s_axi_lite.clk,
                 self.s_axi_lite.rst,
@@ -389,6 +398,8 @@ class MaiaSDR(Elaboratable):
             'sampling', 'sync', self.iq_in_width)
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
+        if self.config.datv_symsync:
+            m.d.comb += rxiq_cdc.valid_in.eq(self.valid_in)
 
         #CDC ddc out
         ddc_re_out = Signal(signed(16))
@@ -651,6 +662,7 @@ class MaiaSDR(Elaboratable):
                 t2ofdm.scheduled.eq(t2r['t2_control']['scheduled']),
                 t2ofdm.load.eq(t2r['t2_control']['load']),
                 t2ofdm.shift.eq(t2r['t2_control']['shift']),
+                t2ofdm.raw_always.eq(t2r['t2_control']['raw_always']),
                 t2ofdm.frame_len.eq(t2r['t2_frame_len']['frame_len']),
                 t2ofdm.nsym.eq(t2r['t2_layout']['nsym']),
                 t2ofdm.gi.eq(t2r['t2_layout']['gi']),
@@ -661,6 +673,7 @@ class MaiaSDR(Elaboratable):
                 t2r['t2_counter']['counter'].eq(t2ofdm.counter),
                 t2r['t2_status']['frames'].eq(t2ofdm.frames),
                 t2r['t2_status']['overflow'].eq(t2ofdm.overflow),
+                t2r['t2_status']['resamp_overflow'].eq(t2resamp.overflow),
                 t2ofdm.common_edge_3x.eq(common_edge_3x.common_edge),
                 t2ofdm.strobe_in.eq(t2resamp.strobe_out),
                 t2ofdm.re_in.eq(t2resamp.re_out),

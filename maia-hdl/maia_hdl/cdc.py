@@ -187,6 +187,9 @@ class RxIQCDC(Elaboratable):
         # i_domain
         self.re_in = Signal(width)
         self.im_in = Signal(width)
+        # i_domain: this cycle has a sample (the ADC FIFO's valid; left at
+        # 1, every cycle is one).
+        self.valid_in = Signal(init=1)
 
         # o_domain
         self.reset = Signal()
@@ -212,7 +215,7 @@ class RxIQCDC(Elaboratable):
 
         m.d.comb += [
             fifo.data_in.eq(Cat(self.re_in, self.im_in)),
-            fifo.wren.eq(~reset_i),
+            fifo.wren.eq(~reset_i & self.valid_in),
         ]
 
         # o_domain

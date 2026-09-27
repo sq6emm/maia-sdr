@@ -66,6 +66,16 @@ class TestT2Resampler(AmaranthSim):
             with self.subTest(case=case['name']):
                 self.run_case(case, lambda r: 19 + (r.random() < 0.65))
 
+    def test_bursts(self):
+        # Samples in pairs and triples back to back now and then (the ADC's
+        # clock-domain crossing does that), the same rate on average.
+        def gaps(r):
+            u = r.random()
+            return 1 if u < 0.15 else (38 if u < 0.3 else 20)
+        for case in json.loads(VECTORS.read_text()):
+            with self.subTest(case=case['name']):
+                self.run_case(case, gaps)
+
 
 if __name__ == '__main__':
     unittest.main()

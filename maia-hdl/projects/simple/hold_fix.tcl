@@ -14,4 +14,7 @@
 ###############################################################################
 puts "INFO: hold_fix.tcl: re-running route_design to fix hold violations (Vivado 2025 workaround)"
 route_design
+# One more setup pass: with the DVB-T2 front end the chip is fuller and the
+# LDPC decoder's longest path came out 0.03 ns short (2026-09-27).
+phys_opt_design -directive AggressiveExplore
 puts "INFO: hold_fix.tcl: done"

@@ -18,11 +18,15 @@ ring. Bit-exact with trxd's model (``src/dvbt2/resamp.rs``):
 
 Four multiply lanes (taps k = 4 j + lane): 8 cycles of products and about
 six of pipeline an output, well inside the ~20 cycles between inputs at
-62.5 MHz. An input arriving meanwhile waits in a holding register. With
-``enable`` low the state resets (history cleared, d = step).
+62.5 MHz on average. Inputs wait in a 16-deep FIFO: the ADC's samples do
+not come evenly spaced out of the clock-domain crossing (a one-sample
+holding register lost 1.8 % of them on the board). ``overflow`` sticks if
+the FIFO ever fills. With ``enable`` low the state resets (history
+cleared, d = step, FIFO emptied).
 """
 
 from amaranth import *
+from amaranth.lib.fifo import SyncFIFOBuffered
 from amaranth.lib.memory import Memory
 
 SPAN = 32
@@ -47,6 +51,7 @@ class T2Resampler(Elaboratable):
         self.strobe_out = Signal()
         self.re_out = Signal(signed(16))
         self.im_out = Signal(signed(16))
+        self.overflow = Signal()
 
     def elaborate(self, platform):
         m = Module()
@@ -74,9 +79,20 @@ class T2Resampler(Elaboratable):
         hist_re = Array(Signal(signed(w), name=f'hre{k}') for k in range(SPAN))
         hist_im = Array(Signal(signed(w), name=f'him{k}') for k in range(SPAN))
 
+        m.submodules.infifo = infifo = ResetInserter(~self.enable)(
+            SyncFIFOBuffered(width=2 * w, depth=16))
+        m.d.comb += [infifo.w_data.eq(Cat(self.re_in, self.im_in)),
+                     infifo.w_en.eq(self.strobe_in & self.enable)]
+        with m.If(~self.enable):
+            m.d.sync += self.overflow.eq(0)
+        with m.Elif(infifo.w_en & ~infifo.w_rdy):
+            m.d.sync += self.overflow.eq(1)
         pend = Signal()
         pend_re = Signal(signed(w))
         pend_im = Signal(signed(w))
+        m.d.comb += [pend.eq(infifo.r_rdy),
+                     pend_re.eq(infifo.r_data[:w]),
+                     pend_im.eq(infifo.r_data[w:])]
         d = Signal(signed(34))
         nd = Signal(signed(34))
         phase = Signal(PHASES_LOG2)
@@ -109,15 +125,16 @@ class T2Resampler(Elaboratable):
         m.d.sync += self.strobe_out.eq(0)
         m.d.comb += nd.eq(d - (1 << FRAC))
 
+        m.d.comb += infifo.r_en.eq(0)
         with m.If(~self.enable):
-            m.d.sync += [d.eq(self.step), pend.eq(0)]
+            m.d.sync += d.eq(self.step)
             m.d.sync += [hist_re[k].eq(0) for k in range(SPAN)]
             m.d.sync += [hist_im[k].eq(0) for k in range(SPAN)]
         with m.Else():
             with m.FSM():
                 with m.State('IDLE'):
                     with m.If(pend):
-                        m.d.sync += pend.eq(0)
+                        m.d.comb += infifo.r_en.eq(1)
                         m.d.sync += [hist_re[0].eq(pend_re),
                                      hist_im[0].eq(pend_im)]
                         m.d.sync += [hist_re[k].eq(hist_re[k - 1])
@@ -170,8 +187,4 @@ class T2Resampler(Elaboratable):
                                  self.im_out.eq(sat(sum_im >> SHIFT)),
                                  self.strobe_out.eq(1)]
                     m.next = 'IDLE'
-            # After IDLE's use of the holding register: a new input wins.
-            with m.If(self.strobe_in):
-                m.d.sync += [pend.eq(1), pend_re.eq(self.re_in),
-                             pend_im.eq(self.im_in)]
         return m
