@@ -123,6 +123,12 @@ class Model:
         frame_no = 0
         win = []           # samples of the FFT window being collected
         win_j = None
+        # The FFT's latency: window v's output word i leaves on window sample
+        # (since the last restart) 2048 v + i + delay - 1.
+        delay = self.fft.delay
+        clk = 0
+        vecs = {}          # window number -> (tag, output re, im)
+        tags = []
         skip = False       # the rest of a frame caught up with
         for n, (x_re, x_im) in enumerate(samples):
             if n in events:
@@ -138,7 +144,11 @@ class Model:
             if reg['scheduled'] and not running and pending is not None:
                 F, pending, running = pending, None, True
                 frame_no = 0
-                skip = False
+                # a start already past: the rest of that frame left out
+                skip = (counter - F + 2**31) % 2**32 - 2**31 > 0
+            if not (reg['scheduled'] and running):
+                # no schedule: the FFT and its labels restart
+                clk, vecs, tags, win = 0, {}, [], []
             # the NCO turns every sample
             idx = (phase >> (32 - NCO_BITS)) & (2**NCO_BITS - 1)
             c, s = self.cos[idx], self.sin[idx]
@@ -189,19 +199,28 @@ class Model:
                 run_len = 0
             if in_win:
                 if not win:
-                    win_j = (j, F & 0x3FFFFF)
+                    tags.append(j | (F & 0x3FFFFF) << 8)
                 win.append((y_re, y_im))
                 if len(win) == N:
                     wr = np.array([v[0] for v in win])
                     wi = np.array([v[1] for v in win])
                     ore, oim = self.fft.model(wr, wi)
-                    car.append(pack_header(win_j[0] | win_j[1] << 8, 1))
-                    for i in range(N):
-                        if bitrev(i) in self.active:
-                            vr = sat16(int(ore[i]) >> reg['shift'])
-                            vi = sat16(int(oim[i]) >> reg['shift'])
-                            car.append(pack(vr, vi, 0, 1))
+                    v = clk // N
+                    vecs[v] = (tags[v], ore, oim)
                     win = []
+                c = clk - (delay - 1)
+                if c >= 0:
+                    v, i = divmod(c, N)
+                    tag, ore, oim = vecs[v]
+                    if i == 0:
+                        car.append(pack_header(tag, 1))
+                    if bitrev(i) in self.active:
+                        vr = sat16(int(ore[i]) >> reg['shift'])
+                        vi = sat16(int(oim[i]) >> reg['shift'])
+                        car.append(pack(vr, vi, 0, 1))
+                    if i == N - 1:
+                        del vecs[v]
+                clk += 1
             counter = (counter + 1) & 0xFFFFFFFF
         return raw, car
 
@@ -292,6 +311,11 @@ class T2Ofdm(Elaboratable):
         sl = Signal(12)
         m.d.comb += sl.eq(N + self.gi)
         m.d.comb += r.eq((self.counter - F)[:32].as_signed())
+        # A start already past: the symbol counters would start from 0 in
+        # the middle of that frame (windows and labels out of step, and the
+        # FFT's framing with them): its rest is left out.
+        start_past = Signal()
+        m.d.comb += start_past.eq((self.counter - pend_start)[:32].as_signed() > 0)
         in_frame = Signal()
         m.d.comb += in_frame.eq((r >= 0) & (r < fl))
 
@@ -343,7 +367,8 @@ class T2Ofdm(Elaboratable):
             # frame advance
             with m.If(self.scheduled & ~running & pending):
                 m.d.sync += [F.eq(pend_start), pending.eq(0),
-                             running.eq(1), frame_no.eq(0), skip.eq(0)]
+                             running.eq(1), frame_no.eq(0),
+                             skip.eq(start_past)]
             with m.Elif(sched & (r == fl - 1)):
                 with m.If(pending):
                     m.d.sync += [F.eq(pend_start), pending.eq(0)]
@@ -362,7 +387,8 @@ class T2Ofdm(Elaboratable):
                 m.d.sync += running.eq(0)
             with m.If(self.scheduled & ~running & pending):
                 m.d.sync += [F.eq(pend_start), pending.eq(0),
-                             running.eq(1), frame_no.eq(0), skip.eq(0)]
+                             running.eq(1), frame_no.eq(0),
+                             skip.eq(start_past)]
 
         # ---- stage 1 -> 2: NCO multiply (tables read) ----
         s2 = Signal()
@@ -421,7 +447,11 @@ class T2Ofdm(Elaboratable):
 
         # FFT input: clken on each window sample.
         win_cnt = Signal(ORDER + 1)
-        tag_fifo = SyncFIFOBuffered(width=30, depth=4)
+        # The FFT, its windows' labels and the counters restart whenever no
+        # schedule runs: windows cut short (raw-everything asked for, the
+        # front end off) would otherwise leave labels behind and the FFT's
+        # framing out of step with the windows for good.
+        tag_fifo = ResetInserter(self.fft_rst)(SyncFIFOBuffered(width=30, depth=4))
         m.submodules.tag_fifo = tag_fifo
         m.d.comb += [fft.re_in.eq(sat(y_re)), fft.im_in.eq(sat(y_im)),
                      fft.clken.eq(s2 & s2_win),
@@ -437,9 +467,8 @@ class T2Ofdm(Elaboratable):
         oidx = Signal(ORDER)
         clken_d = Signal()
         m.d.sync += clken_d.eq(s2 & s2_win)
-        m.d.comb += self.fft_rst.eq(~self.enable)
-        with m.If(~self.enable):
-            m.d.sync += [ocnt.eq(0), primed.eq(0), oidx.eq(0), win_cnt.eq(0)]
+        m.d.comb += self.fft_rst.eq(~self.enable | ~self.scheduled | ~running)
+
         # The output belonging to clken number c (from 0) is presented after
         # clken c, for c >= delay - 1 (see test_t2ofdm: alignment checked
         # against the model).
@@ -475,6 +504,11 @@ class T2Ofdm(Elaboratable):
         with m.Elif(car_pend):
             m.d.comb += [car_fifo.w_data.eq(car_word), car_fifo.w_en.eq(1)]
             m.d.sync += car_pend.eq(0)
+
+        # Restart (after the updates above: the last assignment wins).
+        with m.If(self.fft_rst):
+            m.d.sync += [ocnt.eq(0), primed.eq(0), oidx.eq(0), win_cnt.eq(0),
+                         car_pend.eq(0)]
 
         # ---- merge: a word every other cycle, carriers first ----
         turn = Signal()

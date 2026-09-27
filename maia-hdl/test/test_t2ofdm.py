@@ -90,5 +90,80 @@ class TestT2Ofdm(AmaranthSim):
                          f'got {[hex(car_h[i]) for i in bad[:4]]} expected {[hex(car_m[i]) for i in bad[:4]]}')
 
 
+class TestT2OfdmRestart(AmaranthSim):
+    """Raw-everything asked for in the middle of an FFT window, a schedule
+    again later: the FFT and its window labels restart (before the fix the
+    labels ran two windows behind and the framing slipped)."""
+    def test_restart(self):
+        fl = 2048 + 2304
+        self.restart(1200 + 4 * fl - 900, 1200 + 4 * fl)
+
+    def test_restart_past(self):
+        """The schedule given again with a start already past, the counter
+        in a window of that frame (as the receiver does after acquiring
+        through the ring's backlog): that frame is left out, the next one
+        framed right (the symbol counters had started from 0 mid-frame)."""
+        fl = 2048 + 2304
+        self.restart(1200 + 3 * fl + 2048 + 300, 1200 + 3 * fl)
+
+    def restart(self, b, start_b):
+        rng = np.random.default_rng(5)
+        fl = 2048 + 2304
+        a = 1200 + 2 * fl + 2048 + 256 + 700
+        nsamp = 1200 + 7 * fl
+        x = [(int(p), int(q)) for p, q in zip(rng.integers(-9000, 9000, nsamp), rng.integers(-9000, 9000, nsamp))]
+        regs = dict(frame_len=fl, nsym=1, gi=256, early=64, track=64, freq=0x0123_4567, shift=1)
+        events = {0: dict(regs, scheduled=0),
+                  1000: dict(scheduled=1, next_start=1200, load=True),
+                  a: dict(scheduled=0),
+                  b: dict(scheduled=1, next_start=start_b, load=True)}
+        raw_m, car_m = Model(t2_active_bins()).run(x, events)
+        ofdm = T2Ofdm()
+        self.dut = ofdm
+        got = []
+
+        async def tick(ctx):
+            if ctx.get(ofdm.strobe_out):
+                got.append(ctx.get(ofdm.re_out) | ctx.get(ofdm.im_out) << 16)
+            await ctx.tick()
+
+        async def bench(ctx):
+            for k, v in regs.items():
+                ctx.set(getattr(ofdm, k), v)
+            ctx.set(ofdm.enable, 1)
+            await ctx.tick()
+            for n, (re, im) in enumerate(x):
+                if n in (1000, b):
+                    ctx.set(ofdm.scheduled, 1)
+                    ctx.set(ofdm.next_start, events[n]['next_start'])
+                    ctx.set(ofdm.load, 1)
+                    await tick(ctx)
+                    ctx.set(ofdm.load, 0)
+                    await tick(ctx)
+                if n == a:
+                    ctx.set(ofdm.scheduled, 0)
+                    await tick(ctx)
+                ctx.set(ofdm.re_in, re)
+                ctx.set(ofdm.im_in, im)
+                ctx.set(ofdm.strobe_in, 1)
+                await tick(ctx)
+                ctx.set(ofdm.strobe_in, 0)
+                for _ in range(GAP - 1):
+                    await tick(ctx)
+            for _ in range(200):
+                await tick(ctx)
+            self.assertEqual(ctx.get(ofdm.overflow), 0)
+
+        self.simulate(bench)
+        raw_h = [w for w in got if not w & (1 << 16)]
+        car_h = [w for w in got if w & (1 << 16)]
+        self.assertEqual(raw_h, raw_m)
+        self.assertGreater(len(car_m), 1706)
+        n = min(len(car_h), len(car_m))
+        bad = [i for i in range(n) if car_h[i] != car_m[i]]
+        self.assertEqual(bad, [], f'first carrier mismatch at {bad[:4]} (of {n})')
+        self.assertEqual(len(car_h), len(car_m))
+
+
 if __name__ == '__main__':
     unittest.main()
