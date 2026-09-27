@@ -18,6 +18,7 @@ set dvb_fpga_vivado_dir [file normalize \
 source [file join $dvb_fpga_vivado_dir add_dvbs2_files.tcl]
 add_files -norecurse [file join $dvb_fpga_vivado_dir dvbs2_encoder_wrapper.vhd]
 add_files -norecurse [list [file normalize datv_split.v] \
+                          [file normalize datv_raw.v] \
                           [file normalize datv_merge.v] \
                           [file normalize datv_tx.v]]
 update_compile_order -fileset sources_1
@@ -51,14 +52,29 @@ ad_ip_parameter datv_encoder CONFIG.INPUT_DATA_WIDTH 64
 ad_connect sys_cpu_clk datv_encoder/clk
 ad_connect datv_slice/Dout datv_encoder/rst_n
 ad_cpu_interconnect 0x43C30000 datv_encoder
-ad_connect datv_fifo_in/M_AXIS datv_encoder/s_axis
+# Raw IQ (DAC GPIO bit 2, DVB-T2): the DMA words skip the encoder.
+ad_ip_instance xlslice datv_raw_slice
+ad_ip_parameter datv_raw_slice CONFIG.DIN_FROM 2
+ad_ip_parameter datv_raw_slice CONFIG.DIN_TO 2
+ad_connect axi_ad9361/up_dac_gpio_out datv_raw_slice/Din
+create_bd_cell -type module -reference datv_raw datv_raw_0
+ad_connect sys_cpu_clk datv_raw_0/clk
+ad_connect datv_raw_slice/Dout datv_raw_0/raw
+ad_ip_instance xlslice datv_raw8_slice
+ad_ip_parameter datv_raw8_slice CONFIG.DIN_FROM 3
+ad_ip_parameter datv_raw8_slice CONFIG.DIN_TO 3
+ad_connect axi_ad9361/up_dac_gpio_out datv_raw8_slice/Din
+ad_connect datv_raw8_slice/Dout datv_raw_0/mode8
+ad_connect datv_fifo_in/M_AXIS datv_raw_0/s_dma_axis
+ad_connect datv_raw_0/m_enc_axis datv_encoder/s_axis
 
 # Pulse shaping and resampling to the DAC rate
 create_bd_cell -type module -reference datv_tx datv_tx_0
 ad_connect sys_cpu_clk datv_tx_0/clk
 ad_connect sys_cpu_reset datv_tx_0/rst
 ad_cpu_interconnect 0x43C20000 datv_tx_0
-ad_connect datv_encoder/m_axis datv_tx_0/s_axis
+ad_connect datv_encoder/m_axis datv_raw_0/s_sym_axis
+ad_connect datv_raw_0/m_tx_axis datv_tx_0/s_axis
 
 # -> DAC clock
 ad_ip_instance axis_data_fifo datv_fifo_out

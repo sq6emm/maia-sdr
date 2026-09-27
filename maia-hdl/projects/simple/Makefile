@@ -18,6 +18,7 @@ M_DEPS += refmeter.v
 M_DEPS += datv_tx.tcl
 M_DEPS += datv_tx.v
 M_DEPS += datv_split.v
+M_DEPS += datv_raw.v
 M_DEPS += datv_merge.v
 M_DEPS += ldpc.tcl
 M_DEPS += ldpc_axi.v
