@@ -25,6 +25,7 @@ from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
 from .symsync import SymSync
 from .hdrdet import HdrDet
+from .t2resamp import T2Resampler
 from .topfft import TopFFT
 
 # IP core version
@@ -133,9 +134,10 @@ class MaiaSDR(Elaboratable):
                 0b001: Register(
                     'ddc_coeff_addr',
                     [
+                        # 10 bits for the DDC, 12 for the T2 resampler
                         Field('coeff_waddr',
                               Access.RW,
-                              10,
+                              12,
                               0),
                     ]),
                 0b010: Register(
@@ -218,6 +220,12 @@ class MaiaSDR(Elaboratable):
                             Field('kp_shift', Access.RW, 5, 7),
                             Field('ki_shift', Access.RW, 5, 13),
                             Field('hdrdet', Access.RW, 1, 0),
+                            # DVB-T2 receive: the recorder takes the T2
+                            # resampler (ADC samples to the T2 rate, step
+                            # in datv_omega); t2_coeff sends the DDC
+                            # coefficient writes to its table instead.
+                            Field('t2', Access.RW, 1, 0),
+                            Field('t2_coeff', Access.RW, 1, 0),
                         ]),
                     0b111: Register(
                         'datv_omega',
@@ -229,6 +237,7 @@ class MaiaSDR(Elaboratable):
         if config.datv_symsync:
             self.symsync = SymSync()
             self.hdrdet = HdrDet()
+            self.t2resamp = T2Resampler()
         metadata = {
             'vendor': 'Daniel Estevez',
             'vendorID': 'destevez.net',
@@ -556,6 +565,22 @@ class MaiaSDR(Elaboratable):
         if self.config.recorder_from_ddc and self.config.datv_symsync:
             m.submodules.symsync = symsync = self.symsync
             m.submodules.hdrdet = hdrdet = self.hdrdet
+            m.submodules.t2resamp = t2resamp = self.t2resamp
+            t2 = self.sdr_registers['datv_symsync']['t2']
+            t2_coeff = self.sdr_registers['datv_symsync']['t2_coeff']
+            m.d.comb += [
+                t2resamp.enable.eq(t2),
+                t2resamp.step.eq(self.sdr_registers['datv_omega']['omega']),
+                t2resamp.coeff_waddr.eq(
+                    self.sdr_registers['ddc_coeff_addr']['coeff_waddr']),
+                t2resamp.coeff_wdata.eq(
+                    self.sdr_registers['ddc_coeff']['coeff_wdata']),
+                t2resamp.coeff_wren.eq(
+                    self.sdr_registers['ddc_coeff']['coeff_wren'] & t2_coeff),
+                t2resamp.strobe_in.eq(rxiq_cdc.strobe_out),
+                t2resamp.re_in.eq(rxiq_cdc.re_out.as_signed()),
+                t2resamp.im_in.eq(rxiq_cdc.im_out.as_signed()),
+            ]
             m.d.comb += [
                 symsync.enable.eq(
                     self.sdr_registers['datv_symsync']['enable']),
@@ -574,10 +599,19 @@ class MaiaSDR(Elaboratable):
                 hdrdet.strobe_in.eq(symsync.strobe_out),
                 hdrdet.re_in.eq(symsync.re_out),
                 hdrdet.im_in.eq(symsync.im_out),
-                self.recorder.strobe_in.eq(hdrdet.strobe_out),
-                self.recorder.re_in.eq(hdrdet.re_out),
-                self.recorder.im_in.eq(hdrdet.im_out),
             ]
+            with m.If(t2):
+                m.d.comb += [
+                    self.recorder.strobe_in.eq(t2resamp.strobe_out),
+                    self.recorder.re_in.eq(t2resamp.re_out),
+                    self.recorder.im_in.eq(t2resamp.im_out),
+                ]
+            with m.Else():
+                m.d.comb += [
+                    self.recorder.strobe_in.eq(hdrdet.strobe_out),
+                    self.recorder.re_in.eq(hdrdet.re_out),
+                    self.recorder.im_in.eq(hdrdet.im_out),
+                ]
         elif self.config.recorder_from_ddc:
             m.d.comb += [
                 self.recorder.strobe_in.eq(self.ddc.strobe_out),
@@ -601,7 +635,9 @@ class MaiaSDR(Elaboratable):
             self.ddc.coeff_waddr.eq(
                 self.sdr_registers['ddc_coeff_addr']['coeff_waddr']),
             self.ddc.coeff_wren.eq(
-                self.sdr_registers['ddc_coeff']['coeff_wren']),
+                self.sdr_registers['ddc_coeff']['coeff_wren']
+                & ~(self.sdr_registers['datv_symsync']['t2_coeff']
+                    if self.config.datv_symsync else 0)),
             self.ddc.coeff_wdata.eq(
                 self.sdr_registers['ddc_coeff']['coeff_wdata']),
             self.ddc.decimation1.eq(
