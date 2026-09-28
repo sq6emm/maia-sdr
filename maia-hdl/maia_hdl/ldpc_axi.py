@@ -10,7 +10,8 @@
   0xFF00  control  W: bit 0 start; bit 1 rate (0 = 1/2, 1 = 3/4);
                    bits 13:8 maximum iterations
   0xFF04  status   R: bit 0 busy, bit 1 converged, bits 13:8 iterations
-  0xFF08  id       "LDP1"
+  0xFF08  id       "LDP1" (lanes 4: "LDP4", ldpc_dec4.py, whose parity
+                   words are laid out in banks: see there)
 """
 
 import argparse
@@ -20,13 +21,16 @@ import amaranth.back.verilog
 
 from .dvbs2_tables import TABLES
 from .ldpc_dec import LdpcDecoder
+from .ldpc_dec4 import LdpcDecoder4
 
 ID = 0x3150444C  # "LDP1"
+ID4 = 0x3450444C  # "LDP4"
 
 
 class LdpcAxi(Elaboratable):
-    def __init__(self):
-        self.dec = LdpcDecoder(TABLES)
+    def __init__(self, lanes=1):
+        self.dec = LdpcDecoder4(TABLES) if lanes == 4 else LdpcDecoder(TABLES)
+        self.id = ID4 if lanes == 4 else ID
         aw = 16
         self.s_axi_awaddr = Signal(aw)
         self.s_axi_awvalid = Signal()
@@ -90,7 +94,7 @@ class LdpcAxi(Elaboratable):
                             m.d.sync += rd_regval.eq(Cat(dec.busy, dec.converged,
                                                          C(0, 6), dec.iterations))
                         with m.Case(0x08):
-                            m.d.sync += rd_regval.eq(ID)
+                            m.d.sync += rd_regval.eq(self.id)
                         with m.Default():
                             m.d.sync += rd_regval.eq(0)
                     m.d.comb += [dec.cpu_addr.eq(self.s_axi_araddr[2:]),
@@ -117,8 +121,9 @@ class LdpcAxi(Elaboratable):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('output_file')
+    parser.add_argument('--lanes', type=int, default=1, choices=[1, 4])
     args = parser.parse_args()
-    top = LdpcAxi()
+    top = LdpcAxi(lanes=args.lanes)
     with open(args.output_file, 'w') as f:
         f.write(amaranth.back.verilog.convert(
             top, name='ldpc_axi', ports=top.ports(), emit_src=False))

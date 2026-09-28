@@ -17,6 +17,7 @@ M_DEPS += xo_corrector.tcl
 M_DEPS += refmeter.v
 M_DEPS += datv_tx.tcl
 M_DEPS += datv_tx.v
+M_DEPS += t2ifft.v
 M_DEPS += datv_split.v
 M_DEPS += datv_raw.v
 M_DEPS += datv_merge.v

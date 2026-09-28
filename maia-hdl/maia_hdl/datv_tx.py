@@ -12,7 +12,8 @@ Registers (word offsets):
   0x0 step         symbol rate / DAC rate * 2**32
   0x4 coeff_addr   coefficient table write address (k * 256 + phase)
   0x8 coeff        bit 0 write strobe, bits 18:1 coefficient
-  0xC id           "DTX1" (0x31585444, little-endian ASCII)
+  0xC id           "DTX2" (0x32585444, little-endian ASCII): "DTX1" before
+                   the DVB-T2 transmit IFFT (t2ifft) sat in front of it
 """
 
 import argparse
@@ -40,7 +41,7 @@ class DatvTx(Elaboratable):
                     Field('coeff_wren', Access.Wpulse, 1, 0),
                     Field('coeff_wdata', Access.RW, self.interp.cw, 0)]),
                 0b11: Register('id', [
-                    Field('id', Access.R, 32, 0x31585444)]),
+                    Field('id', Access.R, 32, 0x32585444)]),
             },
             2)
         self.s_axis_tdata = Signal(32)

@@ -20,7 +20,8 @@ add_files -norecurse [file join $dvb_fpga_vivado_dir dvbs2_encoder_wrapper.vhd]
 add_files -norecurse [list [file normalize datv_split.v] \
                           [file normalize datv_raw.v] \
                           [file normalize datv_merge.v] \
-                          [file normalize datv_tx.v]]
+                          [file normalize datv_tx.v] \
+                          [file normalize t2ifft.v]]
 update_compile_order -fileset sources_1
 
 ad_ip_instance xlslice datv_slice
@@ -74,7 +75,19 @@ ad_connect sys_cpu_clk datv_tx_0/clk
 ad_connect sys_cpu_reset datv_tx_0/rst
 ad_cpu_interconnect 0x43C20000 datv_tx_0
 ad_connect datv_encoder/m_axis datv_raw_0/s_sym_axis
-ad_connect datv_raw_0/m_tx_axis datv_tx_0/s_axis
+# DVB-T2 transmit IFFT (maia_hdl/t2ifft.py; DAC GPIO bit 4): the raw words
+# are P1 samples and each symbol's carriers, the IFFT and guard interval
+# happen here. Off: the raw words pass straight through.
+ad_ip_instance xlslice t2ifft_slice
+ad_ip_parameter t2ifft_slice CONFIG.DIN_FROM 4
+ad_ip_parameter t2ifft_slice CONFIG.DIN_TO 4
+ad_connect axi_ad9361/up_dac_gpio_out t2ifft_slice/Din
+create_bd_cell -type module -reference t2ifft t2ifft_0
+ad_connect sys_cpu_clk t2ifft_0/clk
+ad_connect sys_cpu_reset t2ifft_0/rst
+ad_connect t2ifft_slice/Dout t2ifft_0/enable
+ad_connect datv_raw_0/m_tx_axis t2ifft_0/s_axis
+ad_connect t2ifft_0/m_axis datv_tx_0/s_axis
 
 # -> DAC clock
 ad_ip_instance axis_data_fifo datv_fifo_out

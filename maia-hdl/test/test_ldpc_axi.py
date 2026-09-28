@@ -7,13 +7,19 @@ decoder; decodes an all-zero frame (a codeword: one iteration)."""
 
 import unittest
 
-from maia_hdl.ldpc_axi import LdpcAxi, ID
+from maia_hdl.ldpc_axi import LdpcAxi, ID, ID4
 from .amaranth_sim import AmaranthSim
 
 
 class TestLdpcAxi(AmaranthSim):
     def test_window(self):
-        self.dut = dut = LdpcAxi()
+        self.window(1, ID)
+
+    def test_window4(self):
+        self.window(4, ID4)
+
+    def window(self, lanes, ident):
+        self.dut = dut = LdpcAxi(lanes=lanes)
 
         async def write(ctx, addr, data, strb=0xF):
             ctx.set(dut.s_axi_awaddr, addr)
@@ -46,7 +52,7 @@ class TestLdpcAxi(AmaranthSim):
             return v
 
         async def bench(ctx):
-            self.assertEqual(await read(ctx, 0xFF08), ID)
+            self.assertEqual(await read(ctx, 0xFF08), ident)
             await write(ctx, 0x1230, 0x11223344)
             self.assertEqual(await read(ctx, 0x1230), 0x11223344)
             await write(ctx, 0x1230, 0x0000AA00, strb=0b0010)
