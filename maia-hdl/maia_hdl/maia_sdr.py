@@ -276,7 +276,34 @@ class MaiaSDR(Elaboratable):
                         Field('overflow', Access.R, 1, 0),
                         Field('resamp_overflow', Access.R, 1, 0),
                     ]),
-                }, 3)
+                    # the equalizer (t2eq.py)
+                    0b1000: Register('t2eq_control', [
+                        Field('enable', Access.RW, 1, 0),
+                        Field('gbank', Access.RW, 1, 0),
+                        Field('p2', Access.RW, 8, 8),
+                        Field('gshift', Access.RW, 5, 16),
+                        Field('fc_j', Access.RW, 8, 255),
+                    ]),
+                    0b1001: Register('t2eq_pilots', [
+                        Field('dx', Access.RW, 6, 6),
+                        Field('dy', Access.RW, 3, 2),
+                    ]),
+                    0b1010: Register('t2eq_rec', [
+                        Field('rec_d', Access.RW, 16, 5461),
+                        Field('rec_fc', Access.RW, 16, 10923),
+                    ]),
+                    0b1011: Register('t2eq_gaddr', [
+                        Field('waddr', Access.RW, 11, 0),
+                        Field('wbank', Access.RW, 1, 0),
+                        Field('we', Access.Wpulse, 1, 0),
+                    ]),
+                    0b1100: Register('t2eq_gdata', [
+                        Field('data', Access.RW, 32, 0),
+                    ]),
+                    0b1101: Register('t2eq_status', [
+                        Field('symbols', Access.R, 16, 0),
+                    ]),
+                }, 4)
         metadata = {
             'vendor': 'Daniel Estevez',
             'vendorID': 'destevez.net',
@@ -670,6 +697,20 @@ class MaiaSDR(Elaboratable):
                 t2ofdm.track.eq(t2r['t2_track']['track']),
                 t2ofdm.freq.eq(t2r['t2_freq']['freq']),
                 t2ofdm.next_start.eq(t2r['t2_next_start']['next_start']),
+                t2ofdm.eq.enable.eq(t2r['t2eq_control']['enable']),
+                t2ofdm.eq.gbank.eq(t2r['t2eq_control']['gbank']),
+                t2ofdm.eq.p2.eq(t2r['t2eq_control']['p2']),
+                t2ofdm.eq.gshift.eq(t2r['t2eq_control']['gshift']),
+                t2ofdm.eq.fc_j.eq(t2r['t2eq_control']['fc_j']),
+                t2ofdm.eq.dx.eq(t2r['t2eq_pilots']['dx']),
+                t2ofdm.eq.dy.eq(t2r['t2eq_pilots']['dy']),
+                t2ofdm.eq.rec_d.eq(t2r['t2eq_rec']['rec_d']),
+                t2ofdm.eq.rec_fc.eq(t2r['t2eq_rec']['rec_fc']),
+                t2ofdm.eq.g_waddr.eq(t2r['t2eq_gaddr']['waddr']),
+                t2ofdm.eq.g_wbank.eq(t2r['t2eq_gaddr']['wbank']),
+                t2ofdm.eq.g_we.eq(t2r['t2eq_gaddr']['we']),
+                t2ofdm.eq.g_wdata.eq(t2r['t2eq_gdata']['data']),
+                t2r['t2eq_status']['symbols'].eq(t2ofdm.eq.symbols),
                 t2r['t2_counter']['counter'].eq(t2ofdm.counter),
                 t2r['t2_status']['frames'].eq(t2ofdm.frames),
                 t2r['t2_status']['overflow'].eq(t2ofdm.overflow),

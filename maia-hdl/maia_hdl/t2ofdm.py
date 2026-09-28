@@ -45,6 +45,7 @@ from amaranth.lib.fifo import SyncFIFOBuffered
 from amaranth.lib.memory import Memory
 
 from .fft import FFT
+from .t2eq import T2Eq
 
 N = 2048
 ORDER = 11
@@ -199,7 +200,8 @@ class Model:
                 run_len = 0
             if in_win:
                 if not win:
-                    tags.append(j | (F & 0x3FFFFF) << 8)
+                    # the frame start's low 21 bits (bit 29: equalized, t2eq)
+                    tags.append(j | (F & 0x1FFFFF) << 8)
                 win.append((y_re, y_im))
                 if len(win) == N:
                     wr = np.array([v[0] for v in win])
@@ -232,6 +234,8 @@ class T2Ofdm(Elaboratable):
     def __init__(self, active=None):
         self.active = set(t2_active_bins() if active is None else active)
         self.fft = new_fft()
+        # the equalizer on the carrier stream (its registers are its own)
+        self.eq = T2Eq()
         # registers (sync domain)
         self.enable = Signal()       # front end on (else nothing out)
         self.scheduled = Signal()
@@ -510,16 +514,25 @@ class T2Ofdm(Elaboratable):
             m.d.sync += [ocnt.eq(0), primed.eq(0), oidx.eq(0), win_cnt.eq(0),
                          car_pend.eq(0)]
 
+        # ---- equalizer: carrier FIFO -> t2eq -> its FIFO ----
+        m.submodules.eq = eq = self.eq
+        eq_fifo = SyncFIFOBuffered(width=32, depth=32)
+        m.submodules.eq_fifo = eq_fifo
+        m.d.comb += [eq.i_data.eq(car_fifo.r_data), eq.i_rdy.eq(car_fifo.r_rdy),
+                     car_fifo.r_en.eq(eq.i_en),
+                     eq.o_rdy.eq(eq_fifo.w_rdy),
+                     eq_fifo.w_data.eq(eq.o_data), eq_fifo.w_en.eq(eq.o_en)]
+
         # ---- merge: a word every other cycle, carriers first ----
         turn = Signal()
         m.d.sync += [self.strobe_out.eq(0), turn.eq(~turn)]
-        m.d.comb += [raw_fifo.r_en.eq(0), car_fifo.r_en.eq(0)]
+        m.d.comb += [raw_fifo.r_en.eq(0), eq_fifo.r_en.eq(0)]
         with m.If(turn):
-            with m.If(car_fifo.r_rdy):
-                m.d.comb += car_fifo.r_en.eq(1)
+            with m.If(eq_fifo.r_rdy):
+                m.d.comb += eq_fifo.r_en.eq(1)
                 m.d.sync += [self.strobe_out.eq(1),
-                             self.re_out.eq(car_fifo.r_data[:16]),
-                             self.im_out.eq(car_fifo.r_data[16:])]
+                             self.re_out.eq(eq_fifo.r_data[:16]),
+                             self.im_out.eq(eq_fifo.r_data[16:])]
             with m.Elif(raw_fifo.r_rdy):
                 m.d.comb += raw_fifo.r_en.eq(1)
                 m.d.sync += [self.strobe_out.eq(1),

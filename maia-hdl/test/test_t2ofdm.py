@@ -19,6 +19,23 @@ import os
 GAP = int(os.environ.get("T2GAP", "6"))   # cycles between samples (34 on the board)
 
 
+def whole(words):
+    """The carrier stream's whole symbols (a header and all 1705 carriers):
+    t2eq passes only those (a symbol cut short, or not yet out, is left
+    out; the ARM could not use it)."""
+    out, cur = [], None
+    for w in words:
+        if w & 1:
+            if cur is not None and len(cur) == 1 + len(t2_active_bins()):
+                out += cur
+            cur = [w]
+        elif cur is not None:
+            cur.append(w)
+    if cur is not None and len(cur) == 1 + len(t2_active_bins()):
+        out += cur
+    return out
+
+
 class TestT2Ofdm(AmaranthSim):
     def test_model(self):
         rng = np.random.default_rng(3)
@@ -83,7 +100,9 @@ class TestT2Ofdm(AmaranthSim):
         # An FFT's output finishes during the window after next (the FFT's
         # delay is 2085 samples): of three windows, one and most of another.
         per = 1 + len(t2_active_bins())
-        self.assertGreaterEqual(len(car_h), per + 1600, f'{len(car_h)} carrier words')
+        car_m = whole(car_m)
+        self.assertGreaterEqual(len(car_h), per, f'{len(car_h)} carrier words')
+        self.assertEqual(len(car_h), len(car_m))
         n = min(len(car_h), len(car_m))
         bad = [i for i in range(n) if car_h[i] != car_m[i]]
         self.assertEqual(bad, [], f'first carrier mismatch at {bad[:4]} (of {n}): '
@@ -158,7 +177,8 @@ class TestT2OfdmRestart(AmaranthSim):
         raw_h = [w for w in got if not w & (1 << 16)]
         car_h = [w for w in got if w & (1 << 16)]
         self.assertEqual(raw_h, raw_m)
-        self.assertGreater(len(car_m), 1706)
+        car_m = whole(car_m)
+        self.assertGreaterEqual(len(car_m), 1706)
         n = min(len(car_h), len(car_m))
         bad = [i for i in range(n) if car_h[i] != car_m[i]]
         self.assertEqual(bad, [], f'first carrier mismatch at {bad[:4]} (of {n})')
