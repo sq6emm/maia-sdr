@@ -25,6 +25,7 @@ M_DEPS += ldpc.tcl
 M_DEPS += ldpc_axi.v
 M_DEPS += rsnn.tcl
 M_DEPS += rsnn_front_axi.v
+M_DEPS += rsnn_axi.v
 M_DEPS += plutoskyr2_system_top.v
 M_DEPS += plutoskyr2_simple.xdc
 M_DEPS += bitstream.xdc

@@ -822,6 +822,7 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   reg [4:0] div_n = 5'h00;
   reg [31:0] div_q = 32'd0;
   reg [32:0] div_r = 33'h000000000;
+  reg done;
   wire drained;
   reg [10:0] e_rd__addr;
   wire [15:0] e_rd__data;
@@ -842,6 +843,9 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   wire [31:0] h_rd__data;
   (* init = 32'd0 *)
   wire [31:0] h_rdata;
+  wire [5:0] h_waddr;
+  wire [31:0] h_wdata;
+  wire h_we;
   reg [5:0] h_wr__addr;
   reg [31:0] h_wr__data;
   reg h_wr__en;
@@ -877,12 +881,12 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   reg [14:0] op_w;
   wire [16:0] opnd;
   reg [6:0] q;
-  reg [6:0] \q$149 ;
-  reg [6:0] \q$151 ;
+  reg [6:0] \q$152 ;
+  reg [6:0] \q$154 ;
   reg [16:0] r = 17'h00000;
   wire [13:0] raddr;
-  reg [12:0] \raddr$150 ;
-  reg [11:0] \raddr$152 ;
+  reg [12:0] \raddr$153 ;
+  reg [11:0] \raddr$155 ;
   wire [31:0] rdata;
   wire [15:0] \rdata$120 ;
   wire [15:0] \rdata$121 ;
@@ -924,7 +928,7 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   output valid;
   reg valid = 1'h0;
   (* init = 1'h0 *)
-  wire \valid$144 ;
+  wire \valid$147 ;
   reg [14:0] w2 = 15'h0000;
   reg [14:0] w3 = 15'h0000;
   wire [13:0] w_waddr;
@@ -4793,25 +4797,25 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   assign \$107  = \$106 [1:0] * 11'h600;
   assign \$108  = { o[4:0], f } + \$107 ;
   assign \$109  = { f, 1'h0 } + kf;
-  assign \$110  = \q$149  - 2'h2;
+  assign \$110  = \q$152  - 2'h2;
   assign \$111  = n2 + 1'h1;
   assign \$112  = \$111  + kt;
   assign \$113  = \$112 [1:0] * 11'h600;
   assign \$114  = { i[4:0], \$110 [5:0] } + \$113 ;
-  assign \$115  = \q$149  >= 2'h2;
-  assign \$116  = \q$149  < 6'h3f;
+  assign \$115  = \q$152  >= 2'h2;
+  assign \$116  = \q$152  < 6'h3f;
   assign \$117  = \$115  & \$116 ;
   assign \$118  = n2 - 2'h2;
   assign \$119  = \$118 [1:0] * 10'h300;
   assign \$120  = { o[4:0], f[4:0] } + \$119 ;
   assign \$121  = b2 + o;
   assign \$122  = f + kf;
-  assign \$123  = \q$151  - 1'h1;
+  assign \$123  = \q$154  - 1'h1;
   assign \$124  = n2 + kt;
   assign \$125  = \$124 [1:0] * 10'h300;
   assign \$126  = { i[4:0], \$123 [4:0] } + \$125 ;
-  assign \$127  = \q$151  >= 1'h1;
-  assign \$128  = \q$151  < 6'h20;
+  assign \$127  = \q$154  >= 1'h1;
+  assign \$128  = \q$154  < 6'h20;
   assign \$129  = \$127  & \$128 ;
   assign \$130  = b3 + o;
   assign \$131  = cin - 1'h1;
@@ -4980,7 +4984,7 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
     r <= \$232 ;
   \rsnn_front_axi.core.a1  a1 (
     .clk(clk),
-    .raddr(\raddr$150 ),
+    .raddr(\raddr$153 ),
     .rdata(\rdata$120 ),
     .rst(rst),
     .waddr(\waddr$126 ),
@@ -4989,7 +4993,7 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   );
   \rsnn_front_axi.core.a2  a2 (
     .clk(clk),
-    .raddr(\raddr$152 ),
+    .raddr(\raddr$155 ),
     .rdata(\rdata$121 ),
     .rst(rst),
     .waddr(\waddr$129 ),
@@ -6805,7 +6809,7 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
-    \q$149  = 7'h00;
+    \q$152  = 7'h00;
     casez (seq_state)
       4'h0:
           /* empty */;
@@ -6816,13 +6820,13 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
             2'h1:
                 /* empty */;
             2'h2:
-                \q$149  = \$109 [6:0];
+                \q$152  = \$109 [6:0];
           endcase
     endcase
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
-    \raddr$150  = 13'h0000;
+    \raddr$153  = 13'h0000;
     casez (seq_state)
       4'h0:
           /* empty */;
@@ -6833,13 +6837,13 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
             2'h1:
                 /* empty */;
             2'h2:
-                \raddr$150  = \$114 [12:0];
+                \raddr$153  = \$114 [12:0];
           endcase
     endcase
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
-    \q$151  = 7'h00;
+    \q$154  = 7'h00;
     casez (seq_state)
       4'h0:
           /* empty */;
@@ -6853,13 +6857,13 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
             2'h2:
                 /* empty */;
             default:
-                \q$151  = \$122 ;
+                \q$154  = \$122 ;
           endcase
     endcase
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
-    \raddr$152  = 12'h000;
+    \raddr$155  = 12'h000;
     casez (seq_state)
       4'h0:
           /* empty */;
@@ -6873,7 +6877,7 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
             2'h2:
                 /* empty */;
             default:
-                \raddr$152  = \$126 [11:0];
+                \raddr$155  = \$126 [11:0];
           endcase
     endcase
   end
@@ -7355,6 +7359,42 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
           z_rd__addr = i;
     endcase
   end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    done = 1'h0;
+    casez (seq_state)
+      4'h0:
+          /* empty */;
+      4'h1:
+          /* empty */;
+      4'h2:
+          /* empty */;
+      4'h3:
+          /* empty */;
+      4'h4:
+          /* empty */;
+      4'h5:
+          /* empty */;
+      4'h6:
+          /* empty */;
+      4'h7:
+          /* empty */;
+      4'h8:
+          /* empty */;
+      4'h9:
+          /* empty */;
+      4'ha:
+          /* empty */;
+      4'hb:
+          /* empty */;
+      4'hc:
+          /* empty */;
+      4'hd:
+          if (drained) begin
+            done = 1'h1;
+          end
+    endcase
+  end
   assign opnd = \$76 [16:0];
   assign nacc = \$80 [47:0];
   assign v32 = s3_v[31:0];
@@ -7370,7 +7410,10 @@ module \rsnn_front_axi.core (rst, go, reset, waddr, wdata, we, b_wr__addr, b_wr_
   assign op_b = b_rd__addr;
   assign conv_out = \$84 [15:0];
   assign zq = { \$86 [41], \$86 [41], \$86 [41], \$86 [41], \$86 [41], \$86 [41], \$86  };
-  assign \valid$144  = valid;
+  assign h_we = h_wr__en;
+  assign h_waddr = h_wr__addr;
+  assign h_wdata = h_wr__data;
+  assign \valid$147  = valid;
   assign \$86  = { \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41], \$85 [41:15] };
 endmodule
 

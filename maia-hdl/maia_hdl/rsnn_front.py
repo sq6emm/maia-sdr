@@ -129,6 +129,12 @@ class RsnnFront(Elaboratable):
         self.x_we = Signal()
         self.h_raddr = Signal(6)
         self.h_rdata = Signal(32)
+        # the outputs as they are written, and a pulse when a frame's are
+        # all out (rsnn_temporal.py takes them from here)
+        self.h_we = Signal()
+        self.h_waddr = Signal(6)
+        self.h_wdata = Signal(32)
+        self.done = Signal()
 
     def elaborate(self, platform):
         m = Module()
@@ -309,6 +315,7 @@ class RsnnFront(Elaboratable):
                     m.d.sync += [zmax_pending.eq(1), zmax_addr.eq(s3_dst[:6] + c2), zmax_val.eq(s3_max)]
                 with m.Case(3):
                     m.d.comb += [h_wr.addr.eq(s3_dst[:6]), h_wr.data.eq(hout), h_wr.en.eq(1)]
+        m.d.comb += [self.h_we.eq(h_wr.en), self.h_waddr.eq(h_wr.addr), self.h_wdata.eq(h_wr.data)]
         with m.If(zmax_pending):
             m.d.comb += [z_wr.addr.eq(zmax_addr), z_wr.data.eq(zmax_val), z_wr.en.eq(1)]
         drained = Signal()
@@ -511,6 +518,7 @@ class RsnnFront(Elaboratable):
                 m.d.comb += self.busy.eq(1)
                 with m.If(drained):
                     m.d.sync += valid.eq(1)
+                    m.d.comb += self.done.eq(1)
                     m.next = 'IDLE'
         return m
 
