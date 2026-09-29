@@ -17,6 +17,7 @@
 #   0x43C10000 refmeter: reference-oscillator counter vs GPS 1PPS / software
 #   0x43C20000 datv_tx (DATV pulse shaping), 0x43C30000 DVB-S2 encoder
 #   0x43C40000 DVB-S2 LDPC decoder (normal frames)
+#   0x43C50000 CW-RS keying detector front end (rsnn_front)
 
 switch -glob -- $project_name {
     "plutoskyr2" {
@@ -63,6 +64,7 @@ source $::tezuka_hdl_dir/common/txfir.tcl
 if {[info exists xo_corrector]} { source xo_corrector.tcl }
 source datv_tx.tcl
 source ldpc.tcl
+source rsnn.tcl
 
 # Reference oscillator meter (see refmeter.v). PlutoSky R2 brings the 40 MHz
 # VCTCXO and the EXT_IO0 1PPS in through new top-level ports; Libre taps the
