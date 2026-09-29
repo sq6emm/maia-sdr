@@ -53,8 +53,13 @@ clean:
 	bash -c "rm -rf build $(PROJECT_NAME).*"
 	bash -c "rm -f *.log *.jou *.str *.xpr *.xsa"
 
+# FPGA_MODE=trx|datv: $(DEST)/simple-<mode>.xsa (all: simple.xsa, the boot one)
+FPGA_MODE ?= all
+export FPGA_MODE
+XSA_NAME = $(if $(filter all,$(FPGA_MODE)),simple.xsa,simple-$(FPGA_MODE).xsa)
+
 install:
-	bash -c "mkdir -p $(DEST) && cp -f $(PROJECT_NAME).sdk/system_top.xsa $(DEST)/simple.xsa"
+	bash -c "mkdir -p $(DEST) && cp -f $(PROJECT_NAME).sdk/system_top.xsa $(DEST)/$(XSA_NAME)"
 
 all: ip_cores build_project install
 

@@ -62,9 +62,14 @@ source rxfir.tcl
 source maia_scope.tcl
 source $::tezuka_hdl_dir/common/txfir.tcl
 if {[info exists xo_corrector]} { source xo_corrector.tcl }
-source datv_tx.tcl
-source ldpc.tcl
-source rsnn.tcl
+# FPGA_MODE (system_project.tcl): the DATV parts or the network front end
+if {$::fpga_mode ne "trx"} {
+    source datv_tx.tcl
+    source ldpc.tcl
+}
+if {$::fpga_mode ne "datv"} {
+    source rsnn.tcl
+}
 
 # Reference oscillator meter (see refmeter.v). PlutoSky R2 brings the 40 MHz
 # VCTCXO and the EXT_IO0 1PPS in through new top-level ports; Libre taps the

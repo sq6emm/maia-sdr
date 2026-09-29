@@ -30,6 +30,9 @@ class MaiaSDRConfig:
         # DATV: symbol timing recovery between the DDC and the recorder
         # (symsync.py; registers sdr 0b110 / 0b111).
         self.datv_symsync = False
+        # With datv_symsync: the DVB-T2 front end too (resampler, OFDM,
+        # equalizer; register window 0x40..). False: DVB-S2 only.
+        self.datv_t2 = True
         self.Enable_RawFFT = False
 
 

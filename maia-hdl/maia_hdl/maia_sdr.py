@@ -43,7 +43,8 @@ class MaiaSDR(Elaboratable):
         self.config = config
         # The DATV cores add a second 16-word window (0x40..0x7F): the
         # DVB-T2 front end's registers.
-        self.axi4_awidth = 5 if config.datv_symsync else 4
+        self.has_t2 = config.datv_symsync and config.datv_t2
+        self.axi4_awidth = 5 if self.has_t2 else 4
         self.s_axi_lite = ClockDomain()
         self.sampling = ClockDomain()
         # A clock domain called 'sync' is added to override the default
@@ -223,13 +224,15 @@ class MaiaSDR(Elaboratable):
                             Field('kp_shift', Access.RW, 5, 7),
                             Field('ki_shift', Access.RW, 5, 13),
                             Field('hdrdet', Access.RW, 1, 0),
+                        ] + ([
                             # DVB-T2 receive: the recorder takes the T2
                             # resampler (ADC samples to the T2 rate, step
                             # in datv_omega); t2_coeff sends the DDC
                             # coefficient writes to its table instead.
+                            # (Absent without T2: they read back 0.)
                             Field('t2', Access.RW, 1, 0),
                             Field('t2_coeff', Access.RW, 1, 0),
-                        ]),
+                        ] if config.datv_t2 else [])),
                     0b111: Register(
                         'datv_omega',
                         [
@@ -240,6 +243,7 @@ class MaiaSDR(Elaboratable):
         if config.datv_symsync:
             self.symsync = SymSync()
             self.hdrdet = HdrDet()
+        if self.has_t2:
             self.t2resamp = T2Resampler()
             self.t2ofdm = T2Ofdm()
             self.t2_registers = Registers(
@@ -318,7 +322,7 @@ class MaiaSDR(Elaboratable):
             0x0: self.control_registers,
             0x10: self.recorder_registers,
             0x20: self.sdr_registers,
-            **({0x40: self.t2_registers} if config.datv_symsync else {}),
+            **({0x40: self.t2_registers} if self.has_t2 else {}),
         }, metadata)
 
         self.iq_in_width = 12
@@ -410,7 +414,7 @@ class MaiaSDR(Elaboratable):
         m.submodules.sdr_registers = self.sdr_registers
         m.submodules.sdr_registers_cdc = sdr_registers_cdc = RegisterCDC(
             's_axi_lite', 'sync', self.sdr_registers.aw)
-        if self.config.datv_symsync:
+        if self.has_t2:
             m.submodules.t2_registers = self.t2_registers
             m.submodules.t2_registers_cdc = t2_registers_cdc = RegisterCDC(
                 's_axi_lite', 'sync', self.t2_registers.aw)
@@ -645,22 +649,6 @@ class MaiaSDR(Elaboratable):
         if self.config.recorder_from_ddc and self.config.datv_symsync:
             m.submodules.symsync = symsync = self.symsync
             m.submodules.hdrdet = hdrdet = self.hdrdet
-            m.submodules.t2resamp = t2resamp = self.t2resamp
-            t2 = self.sdr_registers['datv_symsync']['t2']
-            t2_coeff = self.sdr_registers['datv_symsync']['t2_coeff']
-            m.d.comb += [
-                t2resamp.enable.eq(t2),
-                t2resamp.step.eq(self.sdr_registers['datv_omega']['omega']),
-                t2resamp.coeff_waddr.eq(
-                    self.sdr_registers['ddc_coeff_addr']['coeff_waddr']),
-                t2resamp.coeff_wdata.eq(
-                    self.sdr_registers['ddc_coeff']['coeff_wdata']),
-                t2resamp.coeff_wren.eq(
-                    self.sdr_registers['ddc_coeff']['coeff_wren'] & t2_coeff),
-                t2resamp.strobe_in.eq(rxiq_cdc.strobe_out),
-                t2resamp.re_in.eq(rxiq_cdc.re_out.as_signed()),
-                t2resamp.im_in.eq(rxiq_cdc.im_out.as_signed()),
-            ]
             m.d.comb += [
                 symsync.enable.eq(
                     self.sdr_registers['datv_symsync']['enable']),
@@ -680,59 +668,82 @@ class MaiaSDR(Elaboratable):
                 hdrdet.re_in.eq(symsync.re_out),
                 hdrdet.im_in.eq(symsync.im_out),
             ]
-            # The T2 OFDM front end after the resampler (when enabled; else
-            # the resampler's samples straight to the ring).
-            m.submodules.t2ofdm = t2ofdm = self.t2ofdm
-            t2r = self.t2_registers
-            m.d.comb += [
-                t2ofdm.enable.eq(t2 & t2r['t2_control']['enable']),
-                t2ofdm.scheduled.eq(t2r['t2_control']['scheduled']),
-                t2ofdm.load.eq(t2r['t2_control']['load']),
-                t2ofdm.shift.eq(t2r['t2_control']['shift']),
-                t2ofdm.raw_always.eq(t2r['t2_control']['raw_always']),
-                t2ofdm.frame_len.eq(t2r['t2_frame_len']['frame_len']),
-                t2ofdm.nsym.eq(t2r['t2_layout']['nsym']),
-                t2ofdm.gi.eq(t2r['t2_layout']['gi']),
-                t2ofdm.early.eq(t2r['t2_layout']['early']),
-                t2ofdm.track.eq(t2r['t2_track']['track']),
-                t2ofdm.freq.eq(t2r['t2_freq']['freq']),
-                t2ofdm.next_start.eq(t2r['t2_next_start']['next_start']),
-                t2ofdm.eq.enable.eq(t2r['t2eq_control']['enable']),
-                t2ofdm.eq.gbank.eq(t2r['t2eq_control']['gbank']),
-                t2ofdm.eq.p2.eq(t2r['t2eq_control']['p2']),
-                t2ofdm.eq.gshift.eq(t2r['t2eq_control']['gshift']),
-                t2ofdm.eq.fc_j.eq(t2r['t2eq_control']['fc_j']),
-                t2ofdm.eq.dx.eq(t2r['t2eq_pilots']['dx']),
-                t2ofdm.eq.dy.eq(t2r['t2eq_pilots']['dy']),
-                t2ofdm.eq.rec_d.eq(t2r['t2eq_rec']['rec_d']),
-                t2ofdm.eq.rec_fc.eq(t2r['t2eq_rec']['rec_fc']),
-                t2ofdm.eq.g_waddr.eq(t2r['t2eq_gaddr']['waddr']),
-                t2ofdm.eq.g_wbank.eq(t2r['t2eq_gaddr']['wbank']),
-                t2ofdm.eq.g_we.eq(t2r['t2eq_gaddr']['we']),
-                t2ofdm.eq.g_wdata.eq(t2r['t2eq_gdata']['data']),
-                t2r['t2eq_status']['symbols'].eq(t2ofdm.eq.symbols),
-                t2r['t2_counter']['counter'].eq(t2ofdm.counter),
-                t2r['t2_status']['frames'].eq(t2ofdm.frames),
-                t2r['t2_status']['overflow'].eq(t2ofdm.overflow),
-                t2r['t2_status']['resamp_overflow'].eq(t2resamp.overflow),
-                t2ofdm.common_edge_3x.eq(common_edge_3x.common_edge),
-                t2ofdm.strobe_in.eq(t2resamp.strobe_out),
-                t2ofdm.re_in.eq(t2resamp.re_out),
-                t2ofdm.im_in.eq(t2resamp.im_out),
-            ]
-            with m.If(t2 & t2r['t2_control']['enable']):
+            if self.has_t2:
+                m.submodules.t2resamp = t2resamp = self.t2resamp
+                t2 = self.sdr_registers['datv_symsync']['t2']
+                t2_coeff = self.sdr_registers['datv_symsync']['t2_coeff']
                 m.d.comb += [
-                    self.recorder.strobe_in.eq(t2ofdm.strobe_out),
-                    self.recorder.re_in.eq(t2ofdm.re_out),
-                    self.recorder.im_in.eq(t2ofdm.im_out),
+                    t2resamp.enable.eq(t2),
+                    t2resamp.step.eq(self.sdr_registers['datv_omega']['omega']),
+                    t2resamp.coeff_waddr.eq(
+                        self.sdr_registers['ddc_coeff_addr']['coeff_waddr']),
+                    t2resamp.coeff_wdata.eq(
+                        self.sdr_registers['ddc_coeff']['coeff_wdata']),
+                    t2resamp.coeff_wren.eq(
+                        self.sdr_registers['ddc_coeff']['coeff_wren'] & t2_coeff),
+                    t2resamp.strobe_in.eq(rxiq_cdc.strobe_out),
+                    t2resamp.re_in.eq(rxiq_cdc.re_out.as_signed()),
+                    t2resamp.im_in.eq(rxiq_cdc.im_out.as_signed()),
                 ]
-            with m.Elif(t2):
+                # The T2 OFDM front end after the resampler (when enabled; else
+                # the resampler's samples straight to the ring).
+                m.submodules.t2ofdm = t2ofdm = self.t2ofdm
+                t2r = self.t2_registers
                 m.d.comb += [
-                    self.recorder.strobe_in.eq(t2resamp.strobe_out),
-                    self.recorder.re_in.eq(t2resamp.re_out),
-                    self.recorder.im_in.eq(t2resamp.im_out),
+                    t2ofdm.enable.eq(t2 & t2r['t2_control']['enable']),
+                    t2ofdm.scheduled.eq(t2r['t2_control']['scheduled']),
+                    t2ofdm.load.eq(t2r['t2_control']['load']),
+                    t2ofdm.shift.eq(t2r['t2_control']['shift']),
+                    t2ofdm.raw_always.eq(t2r['t2_control']['raw_always']),
+                    t2ofdm.frame_len.eq(t2r['t2_frame_len']['frame_len']),
+                    t2ofdm.nsym.eq(t2r['t2_layout']['nsym']),
+                    t2ofdm.gi.eq(t2r['t2_layout']['gi']),
+                    t2ofdm.early.eq(t2r['t2_layout']['early']),
+                    t2ofdm.track.eq(t2r['t2_track']['track']),
+                    t2ofdm.freq.eq(t2r['t2_freq']['freq']),
+                    t2ofdm.next_start.eq(t2r['t2_next_start']['next_start']),
+                    t2ofdm.eq.enable.eq(t2r['t2eq_control']['enable']),
+                    t2ofdm.eq.gbank.eq(t2r['t2eq_control']['gbank']),
+                    t2ofdm.eq.p2.eq(t2r['t2eq_control']['p2']),
+                    t2ofdm.eq.gshift.eq(t2r['t2eq_control']['gshift']),
+                    t2ofdm.eq.fc_j.eq(t2r['t2eq_control']['fc_j']),
+                    t2ofdm.eq.dx.eq(t2r['t2eq_pilots']['dx']),
+                    t2ofdm.eq.dy.eq(t2r['t2eq_pilots']['dy']),
+                    t2ofdm.eq.rec_d.eq(t2r['t2eq_rec']['rec_d']),
+                    t2ofdm.eq.rec_fc.eq(t2r['t2eq_rec']['rec_fc']),
+                    t2ofdm.eq.g_waddr.eq(t2r['t2eq_gaddr']['waddr']),
+                    t2ofdm.eq.g_wbank.eq(t2r['t2eq_gaddr']['wbank']),
+                    t2ofdm.eq.g_we.eq(t2r['t2eq_gaddr']['we']),
+                    t2ofdm.eq.g_wdata.eq(t2r['t2eq_gdata']['data']),
+                    t2r['t2eq_status']['symbols'].eq(t2ofdm.eq.symbols),
+                    t2r['t2_counter']['counter'].eq(t2ofdm.counter),
+                    t2r['t2_status']['frames'].eq(t2ofdm.frames),
+                    t2r['t2_status']['overflow'].eq(t2ofdm.overflow),
+                    t2r['t2_status']['resamp_overflow'].eq(t2resamp.overflow),
+                    t2ofdm.common_edge_3x.eq(common_edge_3x.common_edge),
+                    t2ofdm.strobe_in.eq(t2resamp.strobe_out),
+                    t2ofdm.re_in.eq(t2resamp.re_out),
+                    t2ofdm.im_in.eq(t2resamp.im_out),
                 ]
-            with m.Else():
+                with m.If(t2 & t2r['t2_control']['enable']):
+                    m.d.comb += [
+                        self.recorder.strobe_in.eq(t2ofdm.strobe_out),
+                        self.recorder.re_in.eq(t2ofdm.re_out),
+                        self.recorder.im_in.eq(t2ofdm.im_out),
+                    ]
+                with m.Elif(t2):
+                    m.d.comb += [
+                        self.recorder.strobe_in.eq(t2resamp.strobe_out),
+                        self.recorder.re_in.eq(t2resamp.re_out),
+                        self.recorder.im_in.eq(t2resamp.im_out),
+                    ]
+                with m.Else():
+                    m.d.comb += [
+                        self.recorder.strobe_in.eq(hdrdet.strobe_out),
+                        self.recorder.re_in.eq(hdrdet.re_out),
+                        self.recorder.im_in.eq(hdrdet.im_out),
+                    ]
+            else:
                 m.d.comb += [
                     self.recorder.strobe_in.eq(hdrdet.strobe_out),
                     self.recorder.re_in.eq(hdrdet.re_out),
@@ -763,7 +774,7 @@ class MaiaSDR(Elaboratable):
             self.ddc.coeff_wren.eq(
                 self.sdr_registers['ddc_coeff']['coeff_wren']
                 & ~(self.sdr_registers['datv_symsync']['t2_coeff']
-                    if self.config.datv_symsync else 0)),
+                    if self.has_t2 else 0)),
             self.ddc.coeff_wdata.eq(
                 self.sdr_registers['ddc_coeff']['coeff_wdata']),
             self.ddc.decimation1.eq(
@@ -795,7 +806,7 @@ class MaiaSDR(Elaboratable):
         # TODO: convert all of this into a RegisterCrossbar module
         address = Signal(self.axi4_awidth, reset_less=True)
         wdata = Signal(32, reset_less=True)
-        if self.config.datv_symsync:
+        if self.has_t2:
             high = self.axi4lite.address[4]
             t2_regs_select = high
         else:
@@ -810,17 +821,17 @@ class MaiaSDR(Elaboratable):
                                    | self.recorder_registers.rdata
                                    | sdr_registers_cdc.i_rdata
                                    | (t2_registers_cdc.i_rdata
-                                      if self.config.datv_symsync else 0)),
+                                      if self.has_t2 else 0)),
             self.axi4lite.rdone.eq(self.control_registers.rdone
                                    | self.recorder_registers.rdone
                                    | sdr_registers_cdc.i_rdone
                                    | (t2_registers_cdc.i_rdone
-                                      if self.config.datv_symsync else 0)),
+                                      if self.has_t2 else 0)),
             self.axi4lite.wdone.eq(self.control_registers.wdone
                                    | self.recorder_registers.wdone
                                    | sdr_registers_cdc.i_wdone
                                    | (t2_registers_cdc.i_wdone
-                                      if self.config.datv_symsync else 0)),
+                                      if self.has_t2 else 0)),
             self.control_registers.ren.eq(
                 self.axi4lite.ren & control_regs_select),
             self.control_registers.wstrobe.eq(
@@ -836,7 +847,7 @@ class MaiaSDR(Elaboratable):
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
         ]
-        if self.config.datv_symsync:
+        if self.has_t2:
             m.d.s_axi_lite += [
                 t2_registers_cdc.i_ren.eq(self.axi4lite.ren & t2_regs_select),
                 t2_registers_cdc.i_wstrobe.eq(

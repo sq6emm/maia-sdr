@@ -24,6 +24,20 @@ switch -glob -- $project_name {
 }
 
 
+# FPGA_MODE (tezuka_fw_simple docs/FPGA-MODES.md): which parts go in.
+#   all   everything (the boot default)
+#   trx   radio + wide scope + CW-RS network front end (no DATV)
+#   datv  radio + wide scope + DVB-S2/T2 receive and transmit + LDPC
+if { [info exists ::env(FPGA_MODE)] } {
+  set fpga_mode $::env(FPGA_MODE)
+} else {
+  set fpga_mode "all"
+}
+if {[lsearch -exact {all trx datv} $fpga_mode] < 0} {
+  puts "CRITICAL WARNING: FPGA_MODE '$fpga_mode' not recognized."
+  exit 1
+}
+set ::fpga_mode $fpga_mode
 adi_project $project_name
 
 if {$project_name eq "plutoskyr2"} {
@@ -33,15 +47,16 @@ if {$project_name eq "plutoskyr2"} {
     "$::tezuka_hdl_dir/boards/$project_name/system_constr.xdc" \
     "plutoskyr2_simple.xdc" \
     "bitstream.xdc" \
-    "datv.xdc" \
     "$ad_hdl_dir/library/common/ad_iobuf.v"]
 } else {
   adi_project_files $project_name [list \
     "$::tezuka_hdl_dir/boards/$project_name/system_top.v" \
     "$::tezuka_hdl_dir/boards/$project_name/system_constr.xdc" \
     "bitstream.xdc" \
-    "datv.xdc" \
     "$ad_hdl_dir/library/common/ad_iobuf.v"]
+}
+if {$fpga_mode ne "trx"} {
+  adi_project_files $project_name [list "datv.xdc"]
 }
 
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]

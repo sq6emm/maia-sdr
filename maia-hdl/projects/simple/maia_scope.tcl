@@ -23,7 +23,12 @@ set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_
                         CONFIG.CLKOUT2_JITTER {116.571} CONFIG.CLKOUT2_PHASE_ERROR {91.100} \
                         CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
 
-ad_ip_instance maia_sdr_maia_iio_lite_datv maia_sdr
+# trx mode: the spectrometer-only core (no DDC ring, no valid_in)
+if {$::fpga_mode eq "trx"} {
+    ad_ip_instance maia_sdr_maia_iio_lite_trx maia_sdr
+} else {
+    ad_ip_instance maia_sdr_maia_iio_lite_datv maia_sdr
+}
 
 # 12-bit I/Q straight from the ADC FIFO (before the x8 decimator).
 ad_ip_instance xlslice adc_i_slice
@@ -41,7 +46,9 @@ ad_connect adc_i_slice/Dout maia_sdr/re_in
 ad_connect adc_q_slice/Dout maia_sdr/im_in
 # Only cycles with a sample (the sampling clock runs faster than the samples
 # come: without this about 1 % of them went in twice).
-ad_connect util_ad9361_adc_fifo/dout_valid_0 maia_sdr/valid_in
+if {$::fpga_mode ne "trx"} {
+    ad_connect util_ad9361_adc_fifo/dout_valid_0 maia_sdr/valid_in
+}
 
 ad_connect maia_sdr/sampling_clk util_ad9361_divclk/clk_out
 ad_connect sys_cpu_clk maia_sdr/s_axi_lite_clk
