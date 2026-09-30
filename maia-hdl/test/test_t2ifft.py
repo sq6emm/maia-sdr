@@ -3,8 +3,9 @@
 #
 
 """T2Ifft against its model (maia_hdl.t2ifft.Model): two short frames (P1 and
-three symbols each) with random input gaps and output back-pressure, and the
-passthrough with the block off."""
+three symbols each) with random input gaps and output back-pressure; frames
+shorter than nsym (the next sync word ends them); and the passthrough with
+the block off."""
 
 import random
 import unittest
@@ -28,18 +29,26 @@ def unword(w):
 
 class TestT2Ifft(AmaranthSim):
     def test_frames(self):
+        self.run_frames([NSYM, NSYM])
+
+    def test_short_frames(self):
+        # 2, then the full 3, then 1 symbol: each frame ended by the next sync
+        self.run_frames([2, NSYM, 1, 2])
+
+    def run_frames(self, syms):
         rng = np.random.default_rng(7)
-        frames = 2
         # stray words first (IQ still queued when T2 started), then per frame
         # the sync word, P1 and the symbols' carriers
         samples = [(int(a), int(b)) for a, b in zip(rng.integers(-500, 500, 37), rng.integers(-500, 500, 37))]
         sync = (0x7FFF, -0x7FFF)
-        for _ in range(frames):
+        for nsym in syms:
             samples.append(sync)
             samples += [(int(a), int(b)) for a, b in zip(rng.integers(-20000, 20000, P1), rng.integers(-20000, 20000, P1))]
             # carriers: complex amplitude within the FFT's limit (32767)
-            for _ in range(NSYM):
+            for _ in range(nsym):
                 samples += [(int(a), int(b)) for a, b in zip(rng.integers(-3000, 3000, NCAR), rng.integers(-3000, 3000, NCAR))]
+        # (a sync word after the last frame closes it)
+        samples.append(sync)
         want = Model(nsym=NSYM).run(samples)
         dut = T2Ifft(nsym=NSYM)
         self.dut = dut

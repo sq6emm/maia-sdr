@@ -11,7 +11,10 @@ raw words, through ``datv_raw``):
   it is dropped (IQ blocks still queued when the transmitter switched to
   T2, or a glitch), so each frame lines up by itself;
 - P1: 2048 time-domain samples, passed through as they are;
-- then ``NSYM`` symbols, each as its 1705 active carriers in FFT bin order
+- then up to ``NSYM`` symbols, each as its 1705 active carriers in FFT bin
+  order; a sync word where the next symbol would start ends the frame early
+  (frames of any length: the 1.35 MHz profile keeps within T2's 250 ms
+  with 152 symbols)
   (the 853 at bins 0..852, then the 852 at bins 1196..2047; the 343 bins
   between are the unused ones, inserted here as zeros).
 
@@ -42,7 +45,7 @@ from amaranth.lib.memory import Memory
 from .t2ofdm import new_fft, bitrev, N, ORDER
 
 P1 = 2048
-NSYM = 198
+NSYM = 198          # the most symbols a frame (P2 and data) may have
 GI = 256
 NLOW = 853          # bins 0..852 from the input
 NZERO = 343         # bins 853..1195 zero
@@ -77,6 +80,8 @@ class Model:
             out += [tuple(s) for s in samples[at:at + P1]]
             at += P1
             for _ in range(self.nsym):
+                if at < len(samples) and ((samples[at][0] & 0xFFFF) | (samples[at][1] & 0xFFFF) << 16) == SYNC:
+                    break           # a shorter frame: the next one starts
                 if at + NCAR > len(samples):
                     return out
                 car = samples[at:at + NCAR]
@@ -160,8 +165,13 @@ class T2Ifft(Elaboratable):
                         m.d.sync += [wcnt.eq(0), item.eq(1), synced.eq(0)]
             with m.Else():
                 with m.If(~in_sym):
-                    # a free buffer: start the symbol (FFT restarted)
-                    with m.If(free):
+                    with m.If(self.s_tvalid & (self.s_tdata == SYNC)):
+                        # a sync word where a symbol would start: the frame
+                        # was shorter than nsym; the next one's P1 follows
+                        m.d.comb += self.s_tready.eq(1)
+                        m.d.sync += [item.eq(0), synced.eq(1)]
+                    with m.Elif(free):
+                        # a free buffer: start the symbol (FFT restarted)
                         m.d.sync += [in_sym.eq(1), feeding.eq(1), bin_.eq(0),
                                      wcnt.eq(0), ocnt.eq(0)]
                 with m.Elif(feeding):

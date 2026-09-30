@@ -53,73 +53,79 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
   reg \$auto$verilog_backend.cc:2355:dump_module$1  = 0;
   wire \$1 ;
   wire \$10 ;
-  reg \$100 ;
-  reg [12:0] \$101 ;
-  reg [7:0] \$102 ;
-  reg \$103 ;
-  reg \$104 ;
-  reg [11:0] \$105 ;
-  reg [12:0] \$106 ;
-  reg \$107 ;
-  reg \$108 ;
-  reg [1:0] \$109 ;
+  wire \$100 ;
+  wire [12:0] \$101 ;
+  wire \$102 ;
+  wire \$103 ;
+  wire [12:0] \$104 ;
+  wire \$105 ;
+  reg \$106 ;
+  reg [12:0] \$107 ;
+  reg [7:0] \$108 ;
+  reg \$109 ;
   wire \$11 ;
   reg \$110 ;
-  reg [31:0] \$111 ;
-  reg \$112 ;
-  reg [11:0] \$113 ;
+  reg [11:0] \$111 ;
+  reg [12:0] \$112 ;
+  reg \$113 ;
   reg \$114 ;
   reg [1:0] \$115 ;
+  reg \$116 ;
+  reg [31:0] \$117 ;
+  reg \$118 ;
+  reg [11:0] \$119 ;
   wire \$12 ;
+  reg \$120 ;
+  reg [1:0] \$121 ;
   wire \$13 ;
   wire \$14 ;
   wire \$15 ;
   wire \$16 ;
   wire \$17 ;
   wire \$18 ;
-  wire [13:0] \$19 ;
+  wire \$19 ;
   wire \$2 ;
-  wire [23:0] \$20 ;
+  wire \$20 ;
   wire \$21 ;
-  wire [23:0] \$22 ;
-  wire \$23 ;
+  wire \$22 ;
+  wire [13:0] \$23 ;
   wire [23:0] \$24 ;
-  wire [23:0] \$25 ;
+  wire \$25 ;
   wire [23:0] \$26 ;
-  wire [23:0] \$27 ;
-  wire \$28 ;
+  wire \$27 ;
+  wire [23:0] \$28 ;
   wire [23:0] \$29 ;
   wire \$3 ;
-  wire \$30 ;
+  wire [23:0] \$30 ;
   wire [23:0] \$31 ;
-  wire [23:0] \$32 ;
+  wire \$32 ;
   wire [23:0] \$33 ;
   wire \$34 ;
-  wire \$35 ;
-  wire \$36 ;
-  wire \$37 ;
+  wire [23:0] \$35 ;
+  wire [23:0] \$36 ;
+  wire [23:0] \$37 ;
   wire \$38 ;
   wire \$39 ;
   wire \$4 ;
-  wire [12:0] \$40 ;
-  wire [12:0] \$41 ;
-  wire [13:0] \$42 ;
-  wire [13:0] \$43 ;
-  wire \$44 ;
-  wire \$45 ;
-  wire \$46 ;
-  wire \$47 ;
+  wire \$40 ;
+  wire \$41 ;
+  wire \$42 ;
+  wire \$43 ;
+  wire [12:0] \$44 ;
+  wire [12:0] \$45 ;
+  wire [13:0] \$46 ;
+  wire [13:0] \$47 ;
   wire \$48 ;
   wire \$49 ;
   wire \$5 ;
   wire \$50 ;
   wire \$51 ;
   wire \$52 ;
-  wire [12:0] \$53 ;
+  wire \$53 ;
   wire \$54 ;
   wire \$55 ;
   wire \$56 ;
-  wire \$57 ;
+  wire [12:0] \$57 ;
   wire \$58 ;
   wire \$59 ;
   wire \$6 ;
@@ -127,29 +133,29 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
   wire \$61 ;
   wire \$62 ;
   wire \$63 ;
-  wire [13:0] \$64 ;
+  wire \$64 ;
   wire \$65 ;
   wire \$66 ;
   wire \$67 ;
-  wire \$68 ;
-  wire [12:0] \$69 ;
+  wire [13:0] \$68 ;
+  wire \$69 ;
   wire \$7 ;
-  wire [13:0] \$70 ;
+  wire \$70 ;
   wire \$71 ;
-  wire [13:0] \$72 ;
+  wire \$72 ;
   wire \$73 ;
-  wire [13:0] \$74 ;
-  wire \$75 ;
-  wire \$76 ;
+  wire \$74 ;
+  wire [12:0] \$75 ;
+  wire [13:0] \$76 ;
   wire \$77 ;
-  wire [8:0] \$78 ;
+  wire [13:0] \$78 ;
   wire \$79 ;
   wire \$8 ;
-  wire \$80 ;
+  wire [13:0] \$80 ;
   wire \$81 ;
   wire \$82 ;
   wire \$83 ;
-  wire \$84 ;
+  wire [8:0] \$84 ;
   wire \$85 ;
   wire \$86 ;
   wire \$87 ;
@@ -161,10 +167,10 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
   wire \$92 ;
   wire \$93 ;
   wire \$94 ;
-  wire [12:0] \$95 ;
+  wire \$95 ;
   wire \$96 ;
   wire \$97 ;
-  wire [12:0] \$98 ;
+  wire \$98 ;
   wire \$99 ;
   reg [11:0] bin_ = 12'h000;
   input clk;
@@ -4329,7 +4335,7 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
   reg [31:0] _0_;
   always @(posedge clk) begin
     if (rd__en) begin
-      _0_ <= \buf [{ rb, \$43 [10:0] }];
+      _0_ <= \buf [{ rb, \$47 [10:0] }];
     end
   end
   assign rd__data = _0_;
@@ -4347,120 +4353,126 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
   assign \$11  = \$10  & s_tvalid;
   assign \$12  = wcnt == 11'h7ff;
   assign \$13  = ~ in_sym;
-  assign \$14  = wcnt < 13'h1035;
-  assign \$15  = ~ enable;
-  assign \$16  = ! item;
-  assign \$17  = \$15  | \$16 ;
-  assign \$18  = ~ in_sym;
-  assign fft_rst = \$17  | \$18 ;
-  assign \$19  = ocnt - 12'h835;
-  assign \$21  = $signed(\$20 ) > $signed(16'h7fff);
-  assign \$23  = $signed(\$22 ) < $signed(16'h8000);
-  assign \$25  = \$23  ? 24'hff8000 : \$24 ;
-  assign \$26  = \$21  ? 24'h007fff : \$25 ;
-  assign \$28  = $signed(\$27 ) > $signed(16'h7fff);
-  assign \$30  = $signed(\$29 ) < $signed(16'h8000);
-  assign \$32  = \$30  ? 24'hff8000 : \$31 ;
-  assign \$33  = \$28  ? 24'h007fff : \$32 ;
-  assign \$34  = clken_d & in_sym;
-  assign \$35  = ocnt >= 12'h835;
-  assign \$36  = \$19 [11:0] == 11'h7ff;
-  assign \$37  = kind >> rb;
-  assign rlen = \$37  ? 12'h900 : 12'h800;
-  assign \$38  = kind >> rb;
-  assign \$39  = rcnt < 9'h100;
-  assign \$40  = rcnt + 11'h700;
-  assign \$41  = rcnt - 9'h100;
-  assign \$42  = \$39  ? { 1'h0, \$40  } : { \$41 [12], \$41  };
-  assign \$43  = \$38  ? \$42  : { 2'h0, rcnt };
-  assign \$44  = full >> rb;
-  assign \$45  = ~ pend;
-  assign \$46  = ~ out_valid;
-  assign \$47  = \$46  | m_tready;
-  assign \$48  = \$45  | \$47 ;
-  assign \$49  = \$44  & \$48 ;
+  assign \$14  = s_tdata == 32'd2147581951;
+  assign \$15  = s_tvalid & \$14 ;
+  assign \$16  = full >> wb;
+  assign \$17  = ~ \$16 ;
+  assign \$18  = wcnt < 13'h1035;
+  assign \$19  = ~ enable;
+  assign \$20  = ! item;
+  assign \$21  = \$19  | \$20 ;
+  assign \$22  = ~ in_sym;
+  assign fft_rst = \$21  | \$22 ;
+  assign \$23  = ocnt - 12'h835;
+  assign \$25  = $signed(\$24 ) > $signed(16'h7fff);
+  assign \$27  = $signed(\$26 ) < $signed(16'h8000);
+  assign \$29  = \$27  ? 24'hff8000 : \$28 ;
+  assign \$30  = \$25  ? 24'h007fff : \$29 ;
+  assign \$32  = $signed(\$31 ) > $signed(16'h7fff);
+  assign \$34  = $signed(\$33 ) < $signed(16'h8000);
+  assign \$36  = \$34  ? 24'hff8000 : \$35 ;
+  assign \$37  = \$32  ? 24'h007fff : \$36 ;
+  assign \$38  = clken_d & in_sym;
+  assign \$39  = ocnt >= 12'h835;
+  assign \$40  = \$23 [11:0] == 11'h7ff;
+  assign \$41  = kind >> rb;
+  assign rlen = \$41  ? 12'h900 : 12'h800;
+  assign \$42  = kind >> rb;
+  assign \$43  = rcnt < 9'h100;
+  assign \$44  = rcnt + 11'h700;
+  assign \$45  = rcnt - 9'h100;
+  assign \$46  = \$43  ? { 1'h0, \$44  } : { \$45 [12], \$45  };
+  assign \$47  = \$42  ? \$46  : { 2'h0, rcnt };
+  assign \$48  = full >> rb;
+  assign \$49  = ~ pend;
   assign \$50  = ~ out_valid;
   assign \$51  = \$50  | m_tready;
-  assign \$52  = \$49  & \$51 ;
-  assign \$53  = rlen - 1'h1;
-  assign \$54  = rcnt == \$53 ;
-  assign \$55  = ! item;
-  assign \$56  = ~ synced;
-  assign \$57  = \$55  & \$56 ;
-  assign \$58  = ! item;
-  assign \$59  = s_tdata == 32'd2147581951;
-  assign \$60  = s_tvalid & \$59 ;
-  assign \$61  = full >> wb;
-  assign \$62  = ~ \$61 ;
-  assign \$63  = \$62  & s_tvalid;
-  assign \$64  = wcnt + 1'h1;
-  assign \$65  = wcnt == 11'h7ff;
-  assign \$66  = ~ in_sym;
-  assign \$67  = full >> wb;
-  assign \$68  = ~ \$67 ;
-  assign \$69  = bin_ + 1'h1;
-  assign \$70  = wcnt + 1'h1;
-  assign \$71  = bin_ == 11'h7ff;
-  assign \$72  = wcnt + 1'h1;
-  assign \$73  = clken_d & in_sym;
-  assign \$74  = ocnt + 1'h1;
-  assign \$75  = ocnt >= 12'h835;
-  assign \$76  = \$19 [11:0] == 11'h7ff;
-  assign \$77  = item == 8'hc6;
-  assign \$78  = item + 1'h1;
-  assign \$79  = ~ wb;
-  assign \$80  = | item;
-  assign \$81  = ~ out_valid;
-  assign \$82  = \$81  | m_tready;
-  assign \$83  = pend & \$82 ;
-  assign \$84  = ~ out_valid;
-  assign \$85  = \$84  | m_tready;
-  assign \$86  = full >> rb;
-  assign \$87  = ~ pend;
-  assign \$88  = ~ out_valid;
-  assign \$89  = \$88  | m_tready;
-  assign \$90  = \$87  | \$89 ;
-  assign \$91  = \$86  & \$90 ;
-  assign \$92  = ~ out_valid;
-  assign \$93  = \$92  | m_tready;
-  assign \$94  = \$91  & \$93 ;
-  assign \$95  = rlen - 1'h1;
-  assign \$96  = rcnt == \$95 ;
-  assign \$97  = ~ rb;
-  assign \$98  = rcnt + 1'h1;
-  assign \$99  = ~ enable;
+  assign \$52  = \$49  | \$51 ;
+  assign \$53  = \$48  & \$52 ;
+  assign \$54  = ~ out_valid;
+  assign \$55  = \$54  | m_tready;
+  assign \$56  = \$53  & \$55 ;
+  assign \$57  = rlen - 1'h1;
+  assign \$58  = rcnt == \$57 ;
+  assign \$59  = ! item;
+  assign \$60  = ~ synced;
+  assign \$61  = \$59  & \$60 ;
+  assign \$62  = ! item;
+  assign \$63  = s_tdata == 32'd2147581951;
+  assign \$64  = s_tvalid & \$63 ;
+  assign \$65  = full >> wb;
+  assign \$66  = ~ \$65 ;
+  assign \$67  = \$66  & s_tvalid;
+  assign \$68  = wcnt + 1'h1;
+  assign \$69  = wcnt == 11'h7ff;
+  assign \$70  = ~ in_sym;
+  assign \$71  = s_tdata == 32'd2147581951;
+  assign \$72  = s_tvalid & \$71 ;
+  assign \$73  = full >> wb;
+  assign \$74  = ~ \$73 ;
+  assign \$75  = bin_ + 1'h1;
+  assign \$76  = wcnt + 1'h1;
+  assign \$77  = bin_ == 11'h7ff;
+  assign \$78  = wcnt + 1'h1;
+  assign \$79  = clken_d & in_sym;
+  assign \$80  = ocnt + 1'h1;
+  assign \$81  = ocnt >= 12'h835;
+  assign \$82  = \$23 [11:0] == 11'h7ff;
+  assign \$83  = item == 8'hc6;
+  assign \$84  = item + 1'h1;
+  assign \$85  = ~ wb;
+  assign \$86  = | item;
+  assign \$87  = ~ out_valid;
+  assign \$88  = \$87  | m_tready;
+  assign \$89  = pend & \$88 ;
+  assign \$90  = ~ out_valid;
+  assign \$91  = \$90  | m_tready;
+  assign \$92  = full >> rb;
+  assign \$93  = ~ pend;
+  assign \$94  = ~ out_valid;
+  assign \$95  = \$94  | m_tready;
+  assign \$96  = \$93  | \$95 ;
+  assign \$97  = \$92  & \$96 ;
+  assign \$98  = ~ out_valid;
+  assign \$99  = \$98  | m_tready;
+  assign \$100  = \$97  & \$99 ;
+  assign \$101  = rlen - 1'h1;
+  assign \$102  = rcnt == \$101 ;
+  assign \$103  = ~ rb;
+  assign \$104  = rcnt + 1'h1;
+  assign \$105  = ~ enable;
   always @(posedge clk)
-    synced <= \$100 ;
+    synced <= \$106 ;
   always @(posedge clk)
-    wcnt <= \$101 ;
+    wcnt <= \$107 ;
   always @(posedge clk)
-    item <= \$102 ;
+    item <= \$108 ;
   always @(posedge clk)
-    in_sym <= \$103 ;
+    in_sym <= \$109 ;
   always @(posedge clk)
-    feeding <= \$104 ;
+    feeding <= \$110 ;
   always @(posedge clk)
-    bin_ <= \$105 ;
+    bin_ <= \$111 ;
   always @(posedge clk)
-    ocnt <= \$106 ;
+    ocnt <= \$112 ;
   always @(posedge clk)
-    clken_d <= \$107 ;
+    clken_d <= \$113 ;
   always @(posedge clk)
-    wb <= \$108 ;
+    wb <= \$114 ;
   always @(posedge clk)
-    kind <= \$109 ;
+    kind <= \$115 ;
   always @(posedge clk)
-    out_valid <= \$110 ;
+    out_valid <= \$116 ;
   always @(posedge clk)
-    out_data <= \$111 ;
+    out_data <= \$117 ;
   always @(posedge clk)
-    pend <= \$112 ;
+    pend <= \$118 ;
   always @(posedge clk)
-    rcnt <= \$113 ;
+    rcnt <= \$119 ;
   always @(posedge clk)
-    rb <= \$114 ;
+    rb <= \$120 ;
   always @(posedge clk)
-    full <= \$115 ;
+    full <= \$121 ;
   \t2ifft.ifft.fft  fft (
     .clk(clk),
     .clken(clken),
@@ -4482,6 +4494,9 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
         s_tready = \$8 ;
       end else begin
         if (\$13 ) begin
+          if (\$15 ) begin
+            s_tready = 1'h1;
+          end
         end else if (feeding) begin
           if (from_input) begin
             s_tready = 1'h1;
@@ -4513,7 +4528,7 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
             clken = 1'h1;
           end
         end else begin
-          clken = \$14 ;
+          clken = \$18 ;
         end
       end
     end
@@ -4529,8 +4544,8 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
         end
       end
     end
-    if (\$34 ) begin
-      if (\$35 ) begin
+    if (\$38 ) begin
+      if (\$39 ) begin
         wr__en = 1'h1;
       end
     end
@@ -4548,9 +4563,9 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
         end
       end
     end
-    if (\$34 ) begin
-      if (\$35 ) begin
-        if (\$36 ) begin
+    if (\$38 ) begin
+      if (\$39 ) begin
+        if (\$40 ) begin
           set_full = 1'h1;
         end
       end
@@ -4601,9 +4616,9 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
         end
       end
     end
-    if (\$34 ) begin
-      if (\$35 ) begin
-        wr__addr = { wb, \$19 [0], \$19 [1], \$19 [2], \$19 [3], \$19 [4], \$19 [5], \$19 [6], \$19 [7], \$19 [8], \$19 [9], \$19 [10] };
+    if (\$38 ) begin
+      if (\$39 ) begin
+        wr__addr = { wb, \$23 [0], \$23 [1], \$23 [2], \$23 [3], \$23 [4], \$23 [5], \$23 [6], \$23 [7], \$23 [8], \$23 [9], \$23 [10] };
       end
     end
   end
@@ -4618,9 +4633,9 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
         end
       end
     end
-    if (\$34 ) begin
-      if (\$35 ) begin
-        wr__data = { \$26 [15:0], \$33 [15:0] };
+    if (\$38 ) begin
+      if (\$39 ) begin
+        wr__data = { \$30 [15:0], \$37 [15:0] };
       end
     end
   end
@@ -4628,8 +4643,8 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
     clr_full = 1'h0;
     if (enable) begin
-      if (\$52 ) begin
-        if (\$54 ) begin
+      if (\$56 ) begin
+        if (\$58 ) begin
           clr_full = 1'h1;
         end
       end
@@ -4639,7 +4654,7 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
     rd__en = 1'h0;
     if (enable) begin
-      if (\$52 ) begin
+      if (\$56 ) begin
         rd__en = 1'h1;
       end
     end
@@ -4686,348 +4701,367 @@ module \t2ifft.ifft (s_tdata, s_tvalid, m_tready, clk, rst, s_tready, m_tdata, m
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$100  = synced;
+    \$106  = synced;
     if (enable) begin
-      if (\$57 ) begin
-        if (\$60 ) begin
-          \$100  = 1'h1;
+      (* full_case = 32'd1 *)
+      if (\$61 ) begin
+        if (\$64 ) begin
+          \$106  = 1'h1;
         end
-      end else if (\$58 ) begin
-        if (\$63 ) begin
-          if (\$65 ) begin
-            \$100  = 1'h0;
+      end else if (\$62 ) begin
+        if (\$67 ) begin
+          if (\$69 ) begin
+            \$106  = 1'h0;
+          end
+        end
+      end else begin
+        if (\$70 ) begin
+          if (\$72 ) begin
+            \$106  = 1'h1;
           end
         end
       end
     end
-    if (\$99 ) begin
-      \$100  = 1'h0;
+    if (\$105 ) begin
+      \$106  = 1'h0;
     end
     if (rst) begin
-      \$100  = 1'h0;
+      \$106  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$101  = wcnt;
+    \$107  = wcnt;
     if (enable) begin
       (* full_case = 32'd1 *)
-      if (\$57 ) begin
-      end else if (\$58 ) begin
-        if (\$63 ) begin
-          \$101  = \$64 [12:0];
-          if (\$65 ) begin
-            \$101  = 13'h0000;
+      if (\$61 ) begin
+      end else if (\$62 ) begin
+        if (\$67 ) begin
+          \$107  = \$68 [12:0];
+          if (\$69 ) begin
+            \$107  = 13'h0000;
           end
         end
       end else begin
         (* full_case = 32'd1 *)
-        if (\$66 ) begin
-          if (\$68 ) begin
-            \$101  = 13'h0000;
+        if (\$70 ) begin
+          if (\$72 ) begin
+          end else if (\$74 ) begin
+            \$107  = 13'h0000;
           end
         end else if (feeding) begin
           if (clken) begin
-            \$101  = \$70 [12:0];
+            \$107  = \$76 [12:0];
           end
         end else begin
           if (clken) begin
-            \$101  = \$72 [12:0];
+            \$107  = \$78 [12:0];
           end
         end
       end
     end
-    if (\$73 ) begin
-      if (\$75 ) begin
-        if (\$76 ) begin
-          \$101  = 13'h0000;
+    if (\$79 ) begin
+      if (\$81 ) begin
+        if (\$82 ) begin
+          \$107  = 13'h0000;
         end
       end
     end
-    if (\$99 ) begin
-      \$101  = 13'h0000;
+    if (\$105 ) begin
+      \$107  = 13'h0000;
     end
     if (rst) begin
-      \$101  = 13'h0000;
+      \$107  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$102  = item;
+    \$108  = item;
     if (enable) begin
-      if (\$57 ) begin
-      end else if (\$58 ) begin
-        if (\$63 ) begin
-          if (\$65 ) begin
-            \$102  = 8'h01;
+      (* full_case = 32'd1 *)
+      if (\$61 ) begin
+      end else if (\$62 ) begin
+        if (\$67 ) begin
+          if (\$69 ) begin
+            \$108  = 8'h01;
+          end
+        end
+      end else begin
+        if (\$70 ) begin
+          if (\$72 ) begin
+            \$108  = 8'h00;
           end
         end
       end
     end
-    if (\$73 ) begin
-      if (\$75 ) begin
-        if (\$76 ) begin
+    if (\$79 ) begin
+      if (\$81 ) begin
+        if (\$82 ) begin
           (* full_case = 32'd1 *)
-          if (\$77 ) begin
-            \$102  = 8'h00;
+          if (\$83 ) begin
+            \$108  = 8'h00;
           end else begin
-            \$102  = \$78 [7:0];
+            \$108  = \$84 [7:0];
           end
         end
       end
     end
-    if (\$99 ) begin
-      \$102  = 8'h00;
+    if (\$105 ) begin
+      \$108  = 8'h00;
     end
     if (rst) begin
-      \$102  = 8'h00;
+      \$108  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$103  = in_sym;
+    \$109  = in_sym;
     if (enable) begin
       (* full_case = 32'd1 *)
-      if (\$57 ) begin
-      end else if (\$58 ) begin
+      if (\$61 ) begin
+      end else if (\$62 ) begin
       end else begin
-        if (\$66 ) begin
-          if (\$68 ) begin
-            \$103  = 1'h1;
+        if (\$70 ) begin
+          if (\$72 ) begin
+          end else if (\$74 ) begin
+            \$109  = 1'h1;
           end
         end
       end
     end
-    if (\$73 ) begin
-      if (\$75 ) begin
-        if (\$76 ) begin
-          \$103  = 1'h0;
+    if (\$79 ) begin
+      if (\$81 ) begin
+        if (\$82 ) begin
+          \$109  = 1'h0;
         end
       end
     end
-    if (\$99 ) begin
-      \$103  = 1'h0;
+    if (\$105 ) begin
+      \$109  = 1'h0;
     end
     if (rst) begin
-      \$103  = 1'h0;
+      \$109  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$104  = feeding;
+    \$110  = feeding;
     if (enable) begin
       (* full_case = 32'd1 *)
-      if (\$57 ) begin
-      end else if (\$58 ) begin
+      if (\$61 ) begin
+      end else if (\$62 ) begin
       end else begin
-        if (\$66 ) begin
-          if (\$68 ) begin
-            \$104  = 1'h1;
+        if (\$70 ) begin
+          if (\$72 ) begin
+          end else if (\$74 ) begin
+            \$110  = 1'h1;
           end
         end else if (feeding) begin
           if (clken) begin
-            if (\$71 ) begin
-              \$104  = 1'h0;
+            if (\$77 ) begin
+              \$110  = 1'h0;
             end
           end
         end
       end
     end
-    if (\$99 ) begin
-      \$104  = 1'h0;
+    if (\$105 ) begin
+      \$110  = 1'h0;
     end
     if (rst) begin
-      \$104  = 1'h0;
+      \$110  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$105  = bin_;
+    \$111  = bin_;
     if (enable) begin
       (* full_case = 32'd1 *)
-      if (\$57 ) begin
-      end else if (\$58 ) begin
+      if (\$61 ) begin
+      end else if (\$62 ) begin
       end else begin
-        if (\$66 ) begin
-          if (\$68 ) begin
-            \$105  = 12'h000;
+        if (\$70 ) begin
+          if (\$72 ) begin
+          end else if (\$74 ) begin
+            \$111  = 12'h000;
           end
         end else if (feeding) begin
           if (clken) begin
-            \$105  = \$69 [11:0];
+            \$111  = \$75 [11:0];
           end
         end
       end
     end
     if (rst) begin
-      \$105  = 12'h000;
+      \$111  = 12'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$106  = ocnt;
+    \$112  = ocnt;
     if (enable) begin
       (* full_case = 32'd1 *)
-      if (\$57 ) begin
-      end else if (\$58 ) begin
+      if (\$61 ) begin
+      end else if (\$62 ) begin
       end else begin
-        if (\$66 ) begin
-          if (\$68 ) begin
-            \$106  = 13'h0000;
+        if (\$70 ) begin
+          if (\$72 ) begin
+          end else if (\$74 ) begin
+            \$112  = 13'h0000;
           end
         end
       end
     end
-    if (\$73 ) begin
-      \$106  = \$74 [12:0];
+    if (\$79 ) begin
+      \$112  = \$80 [12:0];
     end
     if (rst) begin
-      \$106  = 13'h0000;
+      \$112  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$107  = clken;
+    \$113  = clken;
     if (rst) begin
-      \$107  = 1'h0;
+      \$113  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$108  = wb;
+    \$114  = wb;
     if (set_full) begin
-      \$108  = \$79 ;
+      \$114  = \$85 ;
     end
-    if (\$99 ) begin
-      \$108  = 1'h0;
+    if (\$105 ) begin
+      \$114  = 1'h0;
     end
     if (rst) begin
-      \$108  = 1'h0;
+      \$114  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$109  = kind;
+    \$115  = kind;
     if (set_full) begin
       (* full_case = 32'd1 *)
       casez (wb)
         1'h0:
-            \$109 [0] = \$80 ;
+            \$115 [0] = \$86 ;
         1'h1:
-            \$109 [1] = \$80 ;
+            \$115 [1] = \$86 ;
       endcase
     end
     if (rst) begin
-      \$109  = 2'h0;
+      \$115  = 2'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$110  = out_valid;
+    \$116  = out_valid;
     (* full_case = 32'd1 *)
     if (enable) begin
-      if (\$83 ) begin
-        \$110  = 1'h1;
-      end else if (\$85 ) begin
-        \$110  = 1'h0;
+      if (\$89 ) begin
+        \$116  = 1'h1;
+      end else if (\$91 ) begin
+        \$116  = 1'h0;
       end
     end else begin
-      \$110  = 1'h0;
+      \$116  = 1'h0;
     end
     if (rst) begin
-      \$110  = 1'h0;
+      \$116  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$111  = out_data;
+    \$117  = out_data;
     if (enable) begin
-      if (\$83 ) begin
-        \$111  = rd__data;
+      if (\$89 ) begin
+        \$117  = rd__data;
       end
     end
     if (rst) begin
-      \$111  = 32'd0;
+      \$117  = 32'd0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$112  = pend;
+    \$118  = pend;
     (* full_case = 32'd1 *)
     if (enable) begin
-      if (\$83 ) begin
-        \$112  = 1'h0;
+      if (\$89 ) begin
+        \$118  = 1'h0;
       end
-      if (\$94 ) begin
-        \$112  = 1'h1;
+      if (\$100 ) begin
+        \$118  = 1'h1;
       end
     end else begin
-      \$112  = 1'h0;
+      \$118  = 1'h0;
     end
     if (rst) begin
-      \$112  = 1'h0;
+      \$118  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$113  = rcnt;
+    \$119  = rcnt;
     (* full_case = 32'd1 *)
     if (enable) begin
-      if (\$94 ) begin
+      if (\$100 ) begin
         (* full_case = 32'd1 *)
-        if (\$96 ) begin
-          \$113  = 12'h000;
+        if (\$102 ) begin
+          \$119  = 12'h000;
         end else begin
-          \$113  = \$98 [11:0];
+          \$119  = \$104 [11:0];
         end
       end
     end else begin
-      \$113  = 12'h000;
+      \$119  = 12'h000;
     end
     if (rst) begin
-      \$113  = 12'h000;
+      \$119  = 12'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$114  = rb;
+    \$120  = rb;
     if (enable) begin
-      if (\$94 ) begin
-        if (\$96 ) begin
-          \$114  = \$97 ;
+      if (\$100 ) begin
+        if (\$102 ) begin
+          \$120  = \$103 ;
         end
       end
     end
-    if (\$99 ) begin
-      \$114  = 1'h0;
+    if (\$105 ) begin
+      \$120  = 1'h0;
     end
     if (rst) begin
-      \$114  = 1'h0;
+      \$120  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$115  = nxt;
-    if (\$99 ) begin
-      \$115  = 2'h0;
+    \$121  = nxt;
+    if (\$105 ) begin
+      \$121  = 2'h0;
     end
     if (rst) begin
-      \$115  = 2'h0;
+      \$121  = 2'h0;
     end
   end
   assign \clken$20  = clken;
-  assign oidx = \$19 [11:0];
-  assign o_re = \$26 [15:0];
-  assign o_im = \$33 [15:0];
-  assign ridx = \$43 [11:0];
-  assign rd__addr = { rb, \$43 [10:0] };
+  assign oidx = \$23 [11:0];
+  assign o_re = \$30 [15:0];
+  assign o_im = \$37 [15:0];
+  assign ridx = \$47 [11:0];
+  assign rd__addr = { rb, \$47 [10:0] };
   assign take = rd__en;
-  assign \$20  = { re_out, 3'h0 };
-  assign \$22  = { re_out, 3'h0 };
   assign \$24  = { re_out, 3'h0 };
-  assign \$27  = { im_out, 3'h0 };
-  assign \$29  = { im_out, 3'h0 };
+  assign \$26  = { re_out, 3'h0 };
+  assign \$28  = { re_out, 3'h0 };
   assign \$31  = { im_out, 3'h0 };
+  assign \$33  = { im_out, 3'h0 };
+  assign \$35  = { im_out, 3'h0 };
 endmodule
 
 (* generator = "Amaranth" *)
@@ -15794,7 +15828,7 @@ module \t2ifft.ifft.fft.twiddle0 (rst, fft_rst, re_a, im_a, re_out, im_out, rdpo
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$16 ),
-    .\port$1649$0 (twiddle_mem_out),
+    .\port$1659$0 (twiddle_mem_out),
     .re_a(re_a),
     .re_out(\re_out$14 ),
     .rst(rst)
@@ -15818,7 +15852,7 @@ module \t2ifft.ifft.fft.twiddle0 (rst, fft_rst, re_a, im_a, re_out, im_out, rdpo
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle0.cmult (rst, fft_rst, re_a, im_a, re_out, im_out, clken, \port$1649$0 , clk);
+module \t2ifft.ifft.fft.twiddle0.cmult (rst, fft_rst, re_a, im_a, re_out, im_out, clken, \port$1659$0 , clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$15  = 0;
   wire [16:0] \$1 ;
   wire [32:0] \$10 ;
@@ -15883,8 +15917,8 @@ module \t2ifft.ifft.fft.twiddle0.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
   reg [32:0] mult0 = 33'h000000000;
   reg [32:0] mult_im = 33'h000000000;
   reg [32:0] mult_re = 33'h000000000;
-  input [31:0] \port$1649$0 ;
-  wire [31:0] \port$1649$0 ;
+  input [31:0] \port$1659$0 ;
+  wire [31:0] \port$1659$0 ;
   input [15:0] re_a;
   wire [15:0] re_a;
   reg [15:0] re_a_q1 = 16'h0000;
@@ -16018,7 +16052,7 @@ module \t2ifft.ifft.fft.twiddle0.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
     if (\$auto$verilog_backend.cc:2355:dump_module$15 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$1649$0 [31:16];
+      \$19  = \port$1659$0 [31:16];
     end
   end
   always @* begin
@@ -16039,7 +16073,7 @@ module \t2ifft.ifft.fft.twiddle0.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
     if (\$auto$verilog_backend.cc:2355:dump_module$15 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$1649$0 [15:0];
+      \$22  = \port$1659$0 [15:0];
     end
   end
   always @* begin
@@ -16133,8 +16167,8 @@ module \t2ifft.ifft.fft.twiddle0.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
       \$35  = \$8 [32:0];
     end
   end
-  assign re_b = \port$1649$0 [31:16];
-  assign im_b = \port$1649$0 [15:0];
+  assign re_b = \port$1659$0 [31:16];
+  assign im_b = \port$1659$0 [15:0];
   assign re_out = \$9 [18:0];
   assign im_out = \$10 [18:0];
   assign \$9  = { re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32:14] };
@@ -16707,7 +16741,7 @@ module \t2ifft.ifft.fft.twiddle1 (rst, fft_rst, re_a, im_a, re_out, im_out, rdpo
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$16 ),
-    .\port$1701$0 (twiddle_mem_out),
+    .\port$1711$0 (twiddle_mem_out),
     .re_a(re_a),
     .re_out(\re_out$14 ),
     .rst(rst)
@@ -16731,7 +16765,7 @@ module \t2ifft.ifft.fft.twiddle1 (rst, fft_rst, re_a, im_a, re_out, im_out, rdpo
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle1.cmult (rst, fft_rst, re_a, im_a, re_out, im_out, clken, \port$1701$0 , clk);
+module \t2ifft.ifft.fft.twiddle1.cmult (rst, fft_rst, re_a, im_a, re_out, im_out, clken, \port$1711$0 , clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$17  = 0;
   wire [16:0] \$1 ;
   wire [32:0] \$10 ;
@@ -16796,8 +16830,8 @@ module \t2ifft.ifft.fft.twiddle1.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
   reg [32:0] mult0 = 33'h000000000;
   reg [32:0] mult_im = 33'h000000000;
   reg [32:0] mult_re = 33'h000000000;
-  input [31:0] \port$1701$0 ;
-  wire [31:0] \port$1701$0 ;
+  input [31:0] \port$1711$0 ;
+  wire [31:0] \port$1711$0 ;
   input [15:0] re_a;
   wire [15:0] re_a;
   reg [15:0] re_a_q1 = 16'h0000;
@@ -16931,7 +16965,7 @@ module \t2ifft.ifft.fft.twiddle1.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
     if (\$auto$verilog_backend.cc:2355:dump_module$17 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$1701$0 [31:16];
+      \$19  = \port$1711$0 [31:16];
     end
   end
   always @* begin
@@ -16952,7 +16986,7 @@ module \t2ifft.ifft.fft.twiddle1.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
     if (\$auto$verilog_backend.cc:2355:dump_module$17 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$1701$0 [15:0];
+      \$22  = \port$1711$0 [15:0];
     end
   end
   always @* begin
@@ -17046,8 +17080,8 @@ module \t2ifft.ifft.fft.twiddle1.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
       \$35  = \$8 [32:0];
     end
   end
-  assign re_b = \port$1701$0 [31:16];
-  assign im_b = \port$1701$0 [15:0];
+  assign re_b = \port$1711$0 [31:16];
+  assign im_b = \port$1711$0 [15:0];
   assign re_out = \$9 [18:0];
   assign im_out = \$10 [18:0];
   assign \$9  = { re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32:14] };
@@ -17364,7 +17398,7 @@ module \t2ifft.ifft.fft.twiddle2 (rst, fft_rst, re_a, im_a, re_out, im_out, rdpo
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$16 ),
-    .\port$1753$0 (twiddle_mem_out),
+    .\port$1763$0 (twiddle_mem_out),
     .re_a(re_a),
     .re_out(\re_out$14 ),
     .rst(rst)
@@ -17388,7 +17422,7 @@ module \t2ifft.ifft.fft.twiddle2 (rst, fft_rst, re_a, im_a, re_out, im_out, rdpo
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle2.cmult (rst, fft_rst, re_a, im_a, re_out, im_out, clken, \port$1753$0 , clk);
+module \t2ifft.ifft.fft.twiddle2.cmult (rst, fft_rst, re_a, im_a, re_out, im_out, clken, \port$1763$0 , clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$19  = 0;
   wire [16:0] \$1 ;
   wire [32:0] \$10 ;
@@ -17453,8 +17487,8 @@ module \t2ifft.ifft.fft.twiddle2.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
   reg [32:0] mult0 = 33'h000000000;
   reg [32:0] mult_im = 33'h000000000;
   reg [32:0] mult_re = 33'h000000000;
-  input [31:0] \port$1753$0 ;
-  wire [31:0] \port$1753$0 ;
+  input [31:0] \port$1763$0 ;
+  wire [31:0] \port$1763$0 ;
   input [15:0] re_a;
   wire [15:0] re_a;
   reg [15:0] re_a_q1 = 16'h0000;
@@ -17588,7 +17622,7 @@ module \t2ifft.ifft.fft.twiddle2.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
     if (\$auto$verilog_backend.cc:2355:dump_module$19 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$1753$0 [31:16];
+      \$19  = \port$1763$0 [31:16];
     end
   end
   always @* begin
@@ -17609,7 +17643,7 @@ module \t2ifft.ifft.fft.twiddle2.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
     if (\$auto$verilog_backend.cc:2355:dump_module$19 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$1753$0 [15:0];
+      \$22  = \port$1763$0 [15:0];
     end
   end
   always @* begin
@@ -17703,8 +17737,8 @@ module \t2ifft.ifft.fft.twiddle2.cmult (rst, fft_rst, re_a, im_a, re_out, im_out
       \$35  = \$8 [32:0];
     end
   end
-  assign re_b = \port$1753$0 [31:16];
-  assign im_b = \port$1753$0 [15:0];
+  assign re_b = \port$1763$0 [31:16];
+  assign im_b = \port$1763$0 [15:0];
   assign re_out = \$9 [18:0];
   assign im_out = \$10 [18:0];
   assign \$9  = { re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32:14] };
@@ -17881,7 +17915,7 @@ module \t2ifft.ifft.fft.twiddle3 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$15 ),
-    .\port$433$0 (rdport__data),
+    .\port$443$0 (rdport__data),
     .re_a(re_a),
     .re_out(\re_out$13 ),
     .rst(rst)
@@ -17897,7 +17931,7 @@ module \t2ifft.ifft.fft.twiddle3 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle3.cmult (rst, fft_rst, re_a, im_a, \port$433$0 , re_out, im_out, clken, clk);
+module \t2ifft.ifft.fft.twiddle3.cmult (rst, fft_rst, re_a, im_a, \port$443$0 , re_out, im_out, clken, clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$20  = 0;
   wire [16:0] \$1 ;
   wire [32:0] \$10 ;
@@ -17962,8 +17996,8 @@ module \t2ifft.ifft.fft.twiddle3.cmult (rst, fft_rst, re_a, im_a, \port$433$0 , 
   reg [32:0] mult0 = 33'h000000000;
   reg [32:0] mult_im = 33'h000000000;
   reg [32:0] mult_re = 33'h000000000;
-  input [31:0] \port$433$0 ;
-  wire [31:0] \port$433$0 ;
+  input [31:0] \port$443$0 ;
+  wire [31:0] \port$443$0 ;
   input [15:0] re_a;
   wire [15:0] re_a;
   reg [15:0] re_a_q1 = 16'h0000;
@@ -18097,7 +18131,7 @@ module \t2ifft.ifft.fft.twiddle3.cmult (rst, fft_rst, re_a, im_a, \port$433$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$20 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$433$0 [31:16];
+      \$19  = \port$443$0 [31:16];
     end
   end
   always @* begin
@@ -18118,7 +18152,7 @@ module \t2ifft.ifft.fft.twiddle3.cmult (rst, fft_rst, re_a, im_a, \port$433$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$20 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$433$0 [15:0];
+      \$22  = \port$443$0 [15:0];
     end
   end
   always @* begin
@@ -18212,8 +18246,8 @@ module \t2ifft.ifft.fft.twiddle3.cmult (rst, fft_rst, re_a, im_a, \port$433$0 , 
       \$35  = \$8 [32:0];
     end
   end
-  assign re_b = \port$433$0 [31:16];
-  assign im_b = \port$433$0 [15:0];
+  assign re_b = \port$443$0 [31:16];
+  assign im_b = \port$443$0 [15:0];
   assign re_out = \$9 [18:0];
   assign im_out = \$10 [18:0];
   assign \$9  = { re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32:14] };
@@ -18326,7 +18360,7 @@ module \t2ifft.ifft.fft.twiddle4 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$15 ),
-    .\port$450$0 (rdport__data),
+    .\port$460$0 (rdport__data),
     .re_a(re_a),
     .re_out(\re_out$13 ),
     .rst(rst)
@@ -18342,7 +18376,7 @@ module \t2ifft.ifft.fft.twiddle4 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle4.cmult (rst, fft_rst, re_a, im_a, \port$450$0 , re_out, im_out, clken, clk);
+module \t2ifft.ifft.fft.twiddle4.cmult (rst, fft_rst, re_a, im_a, \port$460$0 , re_out, im_out, clken, clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$21  = 0;
   wire [16:0] \$1 ;
   wire [32:0] \$10 ;
@@ -18407,8 +18441,8 @@ module \t2ifft.ifft.fft.twiddle4.cmult (rst, fft_rst, re_a, im_a, \port$450$0 , 
   reg [32:0] mult0 = 33'h000000000;
   reg [32:0] mult_im = 33'h000000000;
   reg [32:0] mult_re = 33'h000000000;
-  input [31:0] \port$450$0 ;
-  wire [31:0] \port$450$0 ;
+  input [31:0] \port$460$0 ;
+  wire [31:0] \port$460$0 ;
   input [15:0] re_a;
   wire [15:0] re_a;
   reg [15:0] re_a_q1 = 16'h0000;
@@ -18542,7 +18576,7 @@ module \t2ifft.ifft.fft.twiddle4.cmult (rst, fft_rst, re_a, im_a, \port$450$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$21 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$450$0 [31:16];
+      \$19  = \port$460$0 [31:16];
     end
   end
   always @* begin
@@ -18563,7 +18597,7 @@ module \t2ifft.ifft.fft.twiddle4.cmult (rst, fft_rst, re_a, im_a, \port$450$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$21 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$450$0 [15:0];
+      \$22  = \port$460$0 [15:0];
     end
   end
   always @* begin
@@ -18657,8 +18691,8 @@ module \t2ifft.ifft.fft.twiddle4.cmult (rst, fft_rst, re_a, im_a, \port$450$0 , 
       \$35  = \$8 [32:0];
     end
   end
-  assign re_b = \port$450$0 [31:16];
-  assign im_b = \port$450$0 [15:0];
+  assign re_b = \port$460$0 [31:16];
+  assign im_b = \port$460$0 [15:0];
   assign re_out = \$9 [18:0];
   assign im_out = \$10 [18:0];
   assign \$9  = { re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32:14] };
@@ -18739,7 +18773,7 @@ module \t2ifft.ifft.fft.twiddle5 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$15 ),
-    .\port$467$0 (rdport__data),
+    .\port$477$0 (rdport__data),
     .re_a(re_a),
     .re_out(\re_out$13 ),
     .rst(rst)
@@ -18755,7 +18789,7 @@ module \t2ifft.ifft.fft.twiddle5 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle5.cmult (rst, fft_rst, re_a, im_a, \port$467$0 , re_out, im_out, clken, clk);
+module \t2ifft.ifft.fft.twiddle5.cmult (rst, fft_rst, re_a, im_a, \port$477$0 , re_out, im_out, clken, clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$22  = 0;
   wire [16:0] \$1 ;
   wire [32:0] \$10 ;
@@ -18820,8 +18854,8 @@ module \t2ifft.ifft.fft.twiddle5.cmult (rst, fft_rst, re_a, im_a, \port$467$0 , 
   reg [32:0] mult0 = 33'h000000000;
   reg [32:0] mult_im = 33'h000000000;
   reg [32:0] mult_re = 33'h000000000;
-  input [31:0] \port$467$0 ;
-  wire [31:0] \port$467$0 ;
+  input [31:0] \port$477$0 ;
+  wire [31:0] \port$477$0 ;
   input [15:0] re_a;
   wire [15:0] re_a;
   reg [15:0] re_a_q1 = 16'h0000;
@@ -18955,7 +18989,7 @@ module \t2ifft.ifft.fft.twiddle5.cmult (rst, fft_rst, re_a, im_a, \port$467$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$22 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$467$0 [31:16];
+      \$19  = \port$477$0 [31:16];
     end
   end
   always @* begin
@@ -18976,7 +19010,7 @@ module \t2ifft.ifft.fft.twiddle5.cmult (rst, fft_rst, re_a, im_a, \port$467$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$22 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$467$0 [15:0];
+      \$22  = \port$477$0 [15:0];
     end
   end
   always @* begin
@@ -19070,8 +19104,8 @@ module \t2ifft.ifft.fft.twiddle5.cmult (rst, fft_rst, re_a, im_a, \port$467$0 , 
       \$35  = \$8 [32:0];
     end
   end
-  assign re_b = \port$467$0 [31:16];
-  assign im_b = \port$467$0 [15:0];
+  assign re_b = \port$477$0 [31:16];
+  assign im_b = \port$477$0 [15:0];
   assign re_out = \$9 [18:0];
   assign im_out = \$10 [18:0];
   assign \$9  = { re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32], re_prod[32:14] };
@@ -19136,7 +19170,7 @@ module \t2ifft.ifft.fft.twiddle6 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$15 ),
-    .\port$484$0 (rdport__data),
+    .\port$494$0 (rdport__data),
     .re_a(re_a),
     .re_out(\re_out$13 ),
     .rst(rst)
@@ -19152,7 +19186,7 @@ module \t2ifft.ifft.fft.twiddle6 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle6.cmult (rst, fft_rst, re_a, im_a, \port$484$0 , re_out, im_out, clken, clk);
+module \t2ifft.ifft.fft.twiddle6.cmult (rst, fft_rst, re_a, im_a, \port$494$0 , re_out, im_out, clken, clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$23  = 0;
   wire [17:0] \$1 ;
   wire [33:0] \$10 ;
@@ -19217,8 +19251,8 @@ module \t2ifft.ifft.fft.twiddle6.cmult (rst, fft_rst, re_a, im_a, \port$484$0 , 
   reg [33:0] mult0 = 34'h000000000;
   reg [33:0] mult_im = 34'h000000000;
   reg [33:0] mult_re = 34'h000000000;
-  input [31:0] \port$484$0 ;
-  wire [31:0] \port$484$0 ;
+  input [31:0] \port$494$0 ;
+  wire [31:0] \port$494$0 ;
   input [16:0] re_a;
   wire [16:0] re_a;
   reg [16:0] re_a_q1 = 17'h00000;
@@ -19352,7 +19386,7 @@ module \t2ifft.ifft.fft.twiddle6.cmult (rst, fft_rst, re_a, im_a, \port$484$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$23 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$484$0 [31:16];
+      \$19  = \port$494$0 [31:16];
     end
   end
   always @* begin
@@ -19373,7 +19407,7 @@ module \t2ifft.ifft.fft.twiddle6.cmult (rst, fft_rst, re_a, im_a, \port$484$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$23 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$484$0 [15:0];
+      \$22  = \port$494$0 [15:0];
     end
   end
   always @* begin
@@ -19467,8 +19501,8 @@ module \t2ifft.ifft.fft.twiddle6.cmult (rst, fft_rst, re_a, im_a, \port$484$0 , 
       \$35  = \$8 [33:0];
     end
   end
-  assign re_b = \port$484$0 [31:16];
-  assign im_b = \port$484$0 [15:0];
+  assign re_b = \port$494$0 [31:16];
+  assign im_b = \port$494$0 [15:0];
   assign re_out = \$9 [19:0];
   assign im_out = \$10 [19:0];
   assign \$9  = { re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33], re_prod[33:14] };
@@ -19525,7 +19559,7 @@ module \t2ifft.ifft.fft.twiddle7 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$15 ),
-    .\port$501$0 (rdport__data),
+    .\port$511$0 (rdport__data),
     .re_a(re_a),
     .re_out(\re_out$13 ),
     .rst(rst)
@@ -19541,7 +19575,7 @@ module \t2ifft.ifft.fft.twiddle7 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle7.cmult (rst, fft_rst, re_a, im_a, \port$501$0 , re_out, im_out, clken, clk);
+module \t2ifft.ifft.fft.twiddle7.cmult (rst, fft_rst, re_a, im_a, \port$511$0 , re_out, im_out, clken, clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$24  = 0;
   wire [18:0] \$1 ;
   wire [34:0] \$10 ;
@@ -19606,8 +19640,8 @@ module \t2ifft.ifft.fft.twiddle7.cmult (rst, fft_rst, re_a, im_a, \port$501$0 , 
   reg [34:0] mult0 = 35'h000000000;
   reg [34:0] mult_im = 35'h000000000;
   reg [34:0] mult_re = 35'h000000000;
-  input [31:0] \port$501$0 ;
-  wire [31:0] \port$501$0 ;
+  input [31:0] \port$511$0 ;
+  wire [31:0] \port$511$0 ;
   input [17:0] re_a;
   wire [17:0] re_a;
   reg [17:0] re_a_q1 = 18'h00000;
@@ -19741,7 +19775,7 @@ module \t2ifft.ifft.fft.twiddle7.cmult (rst, fft_rst, re_a, im_a, \port$501$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$24 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$501$0 [31:16];
+      \$19  = \port$511$0 [31:16];
     end
   end
   always @* begin
@@ -19762,7 +19796,7 @@ module \t2ifft.ifft.fft.twiddle7.cmult (rst, fft_rst, re_a, im_a, \port$501$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$24 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$501$0 [15:0];
+      \$22  = \port$511$0 [15:0];
     end
   end
   always @* begin
@@ -19856,8 +19890,8 @@ module \t2ifft.ifft.fft.twiddle7.cmult (rst, fft_rst, re_a, im_a, \port$501$0 , 
       \$35  = \$8 [34:0];
     end
   end
-  assign re_b = \port$501$0 [31:16];
-  assign im_b = \port$501$0 [15:0];
+  assign re_b = \port$511$0 [31:16];
+  assign im_b = \port$511$0 [15:0];
   assign re_out = \$9 [20:0];
   assign im_out = \$10 [20:0];
   assign \$9  = { re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34], re_prod[34:14] };
@@ -19910,7 +19944,7 @@ module \t2ifft.ifft.fft.twiddle8 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
     .fft_rst(fft_rst),
     .im_a(im_a),
     .im_out(\im_out$15 ),
-    .\port$518$0 (rdport__data),
+    .\port$528$0 (rdport__data),
     .re_a(re_a),
     .re_out(\re_out$13 ),
     .rst(rst)
@@ -19926,7 +19960,7 @@ module \t2ifft.ifft.fft.twiddle8 (rst, fft_rst, re_a, im_a, re_out, im_out, clke
 endmodule
 
 (* generator = "Amaranth" *)
-module \t2ifft.ifft.fft.twiddle8.cmult (rst, fft_rst, re_a, im_a, \port$518$0 , re_out, im_out, clken, clk);
+module \t2ifft.ifft.fft.twiddle8.cmult (rst, fft_rst, re_a, im_a, \port$528$0 , re_out, im_out, clken, clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$25  = 0;
   wire [19:0] \$1 ;
   wire [35:0] \$10 ;
@@ -19991,8 +20025,8 @@ module \t2ifft.ifft.fft.twiddle8.cmult (rst, fft_rst, re_a, im_a, \port$518$0 , 
   reg [35:0] mult0 = 36'h000000000;
   reg [35:0] mult_im = 36'h000000000;
   reg [35:0] mult_re = 36'h000000000;
-  input [31:0] \port$518$0 ;
-  wire [31:0] \port$518$0 ;
+  input [31:0] \port$528$0 ;
+  wire [31:0] \port$528$0 ;
   input [18:0] re_a;
   wire [18:0] re_a;
   reg [18:0] re_a_q1 = 19'h00000;
@@ -20126,7 +20160,7 @@ module \t2ifft.ifft.fft.twiddle8.cmult (rst, fft_rst, re_a, im_a, \port$518$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$25 ) begin end
     \$19  = re_b_q1;
     if (clken) begin
-      \$19  = \port$518$0 [31:16];
+      \$19  = \port$528$0 [31:16];
     end
   end
   always @* begin
@@ -20147,7 +20181,7 @@ module \t2ifft.ifft.fft.twiddle8.cmult (rst, fft_rst, re_a, im_a, \port$518$0 , 
     if (\$auto$verilog_backend.cc:2355:dump_module$25 ) begin end
     \$22  = im_b_q1;
     if (clken) begin
-      \$22  = \port$518$0 [15:0];
+      \$22  = \port$528$0 [15:0];
     end
   end
   always @* begin
@@ -20241,8 +20275,8 @@ module \t2ifft.ifft.fft.twiddle8.cmult (rst, fft_rst, re_a, im_a, \port$518$0 , 
       \$35  = \$8 [35:0];
     end
   end
-  assign re_b = \port$518$0 [31:16];
-  assign im_b = \port$518$0 [15:0];
+  assign re_b = \port$528$0 [31:16];
+  assign im_b = \port$528$0 [15:0];
   assign re_out = \$9 [21:0];
   assign im_out = \$10 [21:0];
   assign \$9  = { re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35], re_prod[35:14] };
