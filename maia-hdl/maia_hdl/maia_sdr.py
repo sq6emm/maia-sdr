@@ -325,6 +325,10 @@ class MaiaSDR(Elaboratable):
             **({0x40: self.t2_registers} if self.has_t2 else {}),
         }, metadata)
 
+        # DVB-T2: the equalizer's output words (the Maia clock), for the
+        # cell router outside the core (t2router.py)
+        self.t2_eq_data = Signal(32)
+        self.t2_eq_valid = Signal()
         self.iq_in_width = 12
         self.re_in = Signal(self.iq_in_width)
         self.im_in = Signal(self.iq_in_width)
@@ -355,6 +359,7 @@ class MaiaSDR(Elaboratable):
                 self.im_in,
             ]
             + ([self.valid_in] if self.config.datv_symsync else [])
+            + ([self.t2_eq_data, self.t2_eq_valid] if self.has_t2 else [])
             + [
                 self.interrupt_out,
                 self.s_axi_lite.clk,
@@ -688,6 +693,9 @@ class MaiaSDR(Elaboratable):
                 # The T2 OFDM front end after the resampler (when enabled; else
                 # the resampler's samples straight to the ring).
                 m.submodules.t2ofdm = t2ofdm = self.t2ofdm
+                # the equalizer's words out (t2router.py: its cells to DDR)
+                m.d.comb += [self.t2_eq_data.eq(t2ofdm.eq.o_data),
+                             self.t2_eq_valid.eq(t2ofdm.eq.o_en)]
                 t2r = self.t2_registers
                 m.d.comb += [
                     t2ofdm.enable.eq(t2 & t2r['t2_control']['enable']),

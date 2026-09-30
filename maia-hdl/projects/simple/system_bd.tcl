@@ -18,6 +18,7 @@
 #   0x43C20000 datv_tx (DATV pulse shaping), 0x43C30000 DVB-S2 encoder
 #   0x43C40000 DVB-S2 LDPC decoder (normal frames)
 #   0x43C50000 CW-RS keying detector front end (rsnn_front)
+#   0x43C60000 DVB-T2 cell router (datv bitstream)
 
 switch -glob -- $project_name {
     "plutoskyr2" {
@@ -69,6 +70,9 @@ if {$::fpga_mode ne "trx"} {
 }
 if {$::fpga_mode ne "datv"} {
     source rsnn.tcl
+}
+if {$::fpga_mode eq "datv"} {
+    source t2router.tcl
 }
 
 # Reference oscillator meter (see refmeter.v). PlutoSky R2 brings the 40 MHz

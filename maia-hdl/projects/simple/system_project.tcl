@@ -58,6 +58,9 @@ if {$project_name eq "plutoskyr2"} {
 if {$fpga_mode ne "trx"} {
   adi_project_files $project_name [list "datv.xdc"]
 }
+if {$fpga_mode eq "datv"} {
+  adi_project_files $project_name [list "t2router.xdc"]
+}
 
 set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.TCL.PRE \
