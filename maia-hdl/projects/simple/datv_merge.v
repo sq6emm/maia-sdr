@@ -1,7 +1,9 @@
 // DATV transmit: with sel (DAC GPIO bit 1) set, the samples of the DVB-S2
 // interpolator (AXI-Stream, I in 31:16, Q in 15:0, already at the DAC rate)
 // replace the x8 interpolator's output, one per DAC request (req, the DAC
-// FIFO's din_valid). An empty FIFO sends zeros and counts an underflow.
+// FIFO's din_valid). An empty FIFO sends zeros and counts an underflow;
+// the count goes to the CPU clock Gray-coded (underflows_gray, read in
+// datv_tx at 0x43C20010).
 `timescale 1ns / 1ps
 module datv_merge (
     input  wire        clk,
@@ -16,7 +18,8 @@ module datv_merge (
     output wire [15:0] out_i,
     output wire [15:0] out_q,
     output wire        out_valid,
-    output reg  [15:0] underflows = 16'd0
+    output reg  [15:0] underflows = 16'd0,
+    output reg  [15:0] underflows_gray = 16'd0
 );
     // sel_async comes from the AD9361 core's DAC GPIO register (CPU clock):
     // two flops into this clock (false path into the first, datv.xdc).
@@ -42,6 +45,8 @@ module datv_merge (
         if (~sel)
             underflows <= 16'd0;
     end
+    always @(posedge clk)
+        underflows_gray <= underflows ^ (underflows >> 1);
     assign out_i     = sel ? di : norm_i;
     assign out_q     = sel ? dq : norm_q;
     assign out_valid = sel ? 1'b1 : norm_valid;

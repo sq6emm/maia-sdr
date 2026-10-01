@@ -12,14 +12,19 @@ Registers (word offsets):
   0x0 step         symbol rate / DAC rate * 2**32
   0x4 coeff_addr   coefficient table write address (k * 256 + phase)
   0x8 coeff        bit 0 write strobe, bits 18:1 coefficient
-  0xC id           "DTX2" (0x32585444, little-endian ASCII): "DTX1" before
-                   the DVB-T2 transmit IFFT (t2ifft) sat in front of it
+  0xC id           "DTX3" (0x33585444, little-endian ASCII): "DTX2" before
+                   the underflow register, "DTX1" before the DVB-T2
+                   transmit IFFT (t2ifft) sat in front of it
+  0x10 underflows  bits 15:0: DAC requests datv_merge.v found no sample for
+                   (it sent zeros) since DATV was selected (DAC GPIO bit 1);
+                   the counter comes Gray-coded from the DAC clock
 """
 
 import argparse
 
 from amaranth import *
 import amaranth.back.verilog
+from amaranth.lib.cdc import FFSynchronizer
 
 from .arb_interp import ArbInterpolator
 from .axi4_lite import Axi4LiteRegisterBridge
@@ -29,7 +34,7 @@ from .register import Access, Field, Registers, Register
 class DatvTx(Elaboratable):
     def __init__(self):
         self.interp = ArbInterpolator()
-        self.axi4lite = Axi4LiteRegisterBridge(2, name='s_axi_lite')
+        self.axi4lite = Axi4LiteRegisterBridge(3, name='s_axi_lite')
         self.registers = Registers(
             'datv_tx',
             {
@@ -41,9 +46,13 @@ class DatvTx(Elaboratable):
                     Field('coeff_wren', Access.Wpulse, 1, 0),
                     Field('coeff_wdata', Access.RW, self.interp.cw, 0)]),
                 0b11: Register('id', [
-                    Field('id', Access.R, 32, 0x32585444)]),
+                    Field('id', Access.R, 32, 0x33585444)]),
+                0b100: Register('underflows', [
+                    Field('underflows', Access.R, 16, 0)]),
             },
-            2)
+            3)
+        # datv_merge.v's counter, Gray-coded in the DAC clock
+        self.underflows_gray = Signal(16)
         self.s_axis_tdata = Signal(32)
         self.s_axis_tvalid = Signal()
         self.s_axis_tready = Signal()
@@ -54,7 +63,8 @@ class DatvTx(Elaboratable):
     def ports(self):
         return self.axi4lite.axi.ports() + [
             self.s_axis_tdata, self.s_axis_tvalid, self.s_axis_tready,
-            self.m_axis_tdata, self.m_axis_tvalid, self.m_axis_tready]
+            self.m_axis_tdata, self.m_axis_tvalid, self.m_axis_tready,
+            self.underflows_gray]
 
     def elaborate(self, platform):
         m = Module()
@@ -65,6 +75,14 @@ class DatvTx(Elaboratable):
             m.d.comb += getattr(regs, s).eq(getattr(self.axi4lite, s))
         for s in ['rdata', 'rdone', 'wdone']:
             m.d.comb += getattr(self.axi4lite, s).eq(getattr(regs, s))
+        # into this clock (the first flop's input: datv.xdc max delay), back
+        # to binary
+        und_sync = Signal(16, name='und_sync')
+        m.submodules.und_cdc = FFSynchronizer(self.underflows_gray, und_sync)
+        und = Signal(16)
+        for i in range(16):
+            m.d.comb += und[i].eq(Cat(*[und_sync[j] for j in range(i, 16)]).xor())
+        m.d.sync += regs['underflows']['underflows'].eq(und)
         m.d.comb += [
             ip.step.eq(regs['step']['step']),
             ip.coeff_waddr.eq(regs['coeff_addr']['coeff_waddr']),

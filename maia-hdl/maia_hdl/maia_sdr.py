@@ -98,6 +98,13 @@ class MaiaSDR(Elaboratable):
                 0b10: Register('recorder_committed_address', [
                     Field('committed_address', Access.R, 32, 0),
                 ]),
+                # ring mode: committed_address wraps since the start (bit
+                # 31 set: older cores read 0 here)
+                0b11: Register('recorder_wraps', [
+                    Field('wraps', Access.R, 16, 0),
+                    Field('reserved', Access.R, 15, 0),
+                    Field('present', Access.R, 1, 1),
+                ]),
             },
             2)
         self.spectrometer = Spectrometer(
@@ -306,6 +313,7 @@ class MaiaSDR(Elaboratable):
                     ]),
                     0b1101: Register('t2eq_status', [
                         Field('symbols', Access.R, 16, 0),
+                        Field('gbank_used', Access.R, 1, 0),
                     ]),
                 }, 4)
         metadata = {
@@ -649,6 +657,8 @@ class MaiaSDR(Elaboratable):
              ['next_address'].eq(self.recorder.next_address)),
             (self.recorder_registers['recorder_committed_address']
              ['committed_address'].eq(self.recorder.committed_address)),
+            (self.recorder_registers['recorder_wraps']
+             ['wraps'].eq(self.recorder.wraps)),
         ]
         # sync domain
         if self.config.recorder_from_ddc and self.config.datv_symsync:
@@ -724,6 +734,7 @@ class MaiaSDR(Elaboratable):
                     t2ofdm.eq.g_we.eq(t2r['t2eq_gaddr']['we']),
                     t2ofdm.eq.g_wdata.eq(t2r['t2eq_gdata']['data']),
                     t2r['t2eq_status']['symbols'].eq(t2ofdm.eq.symbols),
+                    t2r['t2eq_status']['gbank_used'].eq(t2ofdm.eq.gbank_used),
                     t2r['t2_counter']['counter'].eq(t2ofdm.counter),
                     t2r['t2_status']['frames'].eq(t2ofdm.frames),
                     t2r['t2_status']['overflow'].eq(t2ofdm.overflow),

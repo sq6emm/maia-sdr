@@ -7,8 +7,9 @@ stream (t2ofdm.py) and the DATV ring. For each data symbol it does what the
 A9 did carrier by carrier:
 
 - z_k = c_k G_k (G the channel inverse the ARM loads, two banks: the ARM
-  fills one while the other is in use and flips ``gbank``, taken at each
-  symbol's start), kept by carrier index k in a symbol RAM;
+  fills one while the other is in use and flips ``gbank``, taken with
+  ``gshift`` at each symbol's start, ``gbank_used`` the one taken), kept by
+  carrier index k in a symbol RAM;
 - the phase slope across the carriers (timing): the angle of
   sum z'_(k+D) conj(z'_k) over the symbol's scattered pilots (z' the pilot
   with its sign taken out: prbs[k] ^ pn[j]; D = dx dy, or dx in the frame
@@ -206,6 +207,10 @@ class T2Eq(Elaboratable):
         self.g_wdata = Signal(32)
         self.g_we = Signal()
         self.symbols = Signal(16)   # out: symbols equalized
+        # out: the G bank of the symbol being equalized (gbank and gshift
+        # are taken together at each symbol's header: software waits for
+        # this to follow a flip before it writes the other bank again)
+        self.gbank_used = Signal()
         # stream in (from the carrier FIFO) and out
         self.i_data = Signal(32)
         self.i_rdy = Signal()
@@ -270,6 +275,8 @@ class T2Eq(Elaboratable):
         c_re = Signal(signed(16))
         c_im = Signal(signed(16))
         gbank_c = Signal()
+        gshift_c = Signal(5, init=16)
+        m.d.comb += self.gbank_used.eq(gbank_c)
         prod = [Signal(signed(34), name=f'cprod{i}') for i in range(4)]
         m.d.comb += [k_rd.addr.eq(cnt), g_rd.addr.eq(Cat(ck, gbank_c))]
         with m.FSM(name='collect'):
@@ -280,6 +287,7 @@ class T2Eq(Elaboratable):
                     with m.If(is_hdr):
                         eq = self.enable & (hdr_j >= self.p2)
                         m.d.sync += [c_eq.eq(eq), c_j.eq(hdr_j), cnt.eq(0), gbank_c.eq(self.gbank),
+                                     gshift_c.eq(self.gshift),
                                      c_hdr.eq(Mux(eq, self.i_data | (1 << 31), self.i_data & 0x7FFFFFFF))]
                         m.next = 'COLLECT'
             with m.State('COLLECT'):
@@ -311,7 +319,7 @@ class T2Eq(Elaboratable):
                              prod[2].eq(c_re * gi), prod[3].eq(c_im * gr)]
                 m.next = 'C_WR'
             with m.State('C_WR'):
-                sh = self.gshift
+                sh = gshift_c
                 rnd = Signal(signed(36))
                 m.d.comb += rnd.eq((C(1, 36) << sh) >> 1)
                 re = Signal(signed(36))

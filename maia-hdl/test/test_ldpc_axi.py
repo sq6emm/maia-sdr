@@ -59,13 +59,18 @@ class TestLdpcAxi(AmaranthSim):
             self.assertEqual(await read(ctx, 0x1230), 0x1122AA44)
             # all-zero LLRs: a codeword, one iteration
             await write(ctx, 0x1230, 0)
+            self.assertEqual(await read(ctx, 0xFF30) & 0b101, 0b101)   # features
             await write(ctx, 0xFF00, 1 | (0 << 1) | (5 << 8))
             self.assertEqual(await read(ctx, 0xFF04) & 1, 1)   # busy
+            # a configuration write while busy is ignored (iterations stay 5)
+            await write(ctx, 0xFF00, 1 | (1 << 1) | (9 << 8))
+            self.assertEqual(await read(ctx, 0xFF00), 5 << 8)
             while (await read(ctx, 0xFF04)) & 1:
                 pass
             st = await read(ctx, 0xFF04)
             self.assertEqual((st >> 1) & 1, 1)       # converged
             self.assertEqual((st >> 8) & 0x3F, 1)    # in one iteration
+            self.assertEqual(st >> 24, 1)            # one decode finished
 
         self.simulate(bench)
 

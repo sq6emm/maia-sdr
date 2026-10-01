@@ -12,7 +12,7 @@ import amaranth.cli
 
 import numpy as np
 
-from .util import clamp_nbits
+from .util import saturate_nbits, saturate
 
 
 class Macc(Elaboratable):
@@ -364,12 +364,12 @@ class FIR4DSP(Elaboratable):
                 else:
                     re1 += sr
                     im1 += si
-            re0 = clamp_nbits(re0 >> self.macc_trunc, self.ow)
-            im0 = clamp_nbits(im0 >> self.macc_trunc, self.ow)
-            re1 = clamp_nbits(re1 >> self.macc_trunc, self.ow)
-            im1 = clamp_nbits(im1 >> self.macc_trunc, self.ow)
-            re_out[j] = clamp_nbits(re0 + re1, self.ow)
-            im_out[j] = clamp_nbits(im0 + im1, self.ow)
+            re0 = saturate_nbits(re0 >> self.macc_trunc, self.ow)
+            im0 = saturate_nbits(im0 >> self.macc_trunc, self.ow)
+            re1 = saturate_nbits(re1 >> self.macc_trunc, self.ow)
+            im1 = saturate_nbits(im1 >> self.macc_trunc, self.ow)
+            re_out[j] = saturate_nbits(re0 + re1, self.ow)
+            im_out[j] = saturate_nbits(im0 + im1, self.ow)
         return re_out, im_out
 
     def elaborate(self, platform):
@@ -505,24 +505,30 @@ class FIR4DSP(Elaboratable):
         result_delay = macc0_re.delay + ram_delay
         macc_done_q = Signal(result_delay)
 
+        # saturating (a plain truncation wrapped a full-scale sum around),
+        # in two registered steps: each accumulator, then their sum (one
+        # step missed the 3x clock by 1.7 ns)
+        sum_q = Signal()
         m.d.sync += [
             macc_done_q.eq(Cat(last_acc & work, macc_done_q[:-1])),
-            self.strobe_out.eq(macc_done_q[-1]),
+            sum_q.eq(macc_done_q[-1]),
+            self.strobe_out.eq(sum_q),
         ]
-        re0 = Signal(signed(self.ow))
-        im0 = Signal(signed(self.ow))
-        re1 = Signal(signed(self.ow))
-        im1 = Signal(signed(self.ow))
-        m.d.comb += [
-            re0.eq(macc0_re.acc >> self.macc_trunc),
-            im0.eq(macc0_im.acc >> self.macc_trunc),
-            re1.eq(macc1_re.acc >> self.macc_trunc),
-            im1.eq(macc1_im.acc >> self.macc_trunc),
-        ]
+        re0 = Signal(signed(self.ow), reset_less=True)
+        im0 = Signal(signed(self.ow), reset_less=True)
+        re1 = Signal(signed(self.ow), reset_less=True)
+        im1 = Signal(signed(self.ow), reset_less=True)
         with m.If(macc_done_q[-1]):
             m.d.sync += [
-                self.re_out.eq(re0 + re1),
-                self.im_out.eq(im0 + im1),
+                re0.eq(saturate(macc0_re.acc >> self.macc_trunc, self.ow)),
+                im0.eq(saturate(macc0_im.acc >> self.macc_trunc, self.ow)),
+                re1.eq(saturate(macc1_re.acc >> self.macc_trunc, self.ow)),
+                im1.eq(saturate(macc1_im.acc >> self.macc_trunc, self.ow)),
+            ]
+        with m.If(sum_q):
+            m.d.sync += [
+                self.re_out.eq(saturate(re0 + re1, self.ow)),
+                self.im_out.eq(saturate(im0 + im1, self.ow)),
             ]
 
         return m
@@ -638,8 +644,8 @@ class FIR2DSP(Elaboratable):
                            * decimation:][:decimation]
                 re += np.sum(wr[::-1] * taps[k])
                 im += np.sum(wi[::-1] * taps[k])
-            re_out[j] = clamp_nbits(re >> self.macc_trunc, self.ow)
-            im_out[j] = clamp_nbits(im >> self.macc_trunc, self.ow)
+            re_out[j] = saturate_nbits(re >> self.macc_trunc, self.ow)
+            im_out[j] = saturate_nbits(im >> self.macc_trunc, self.ow)
         return re_out, im_out
 
     def elaborate(self, platform):
@@ -754,8 +760,8 @@ class FIR2DSP(Elaboratable):
         re = Signal(signed(self.ow))
         im = Signal(signed(self.ow))
         m.d.comb += [
-            re.eq(macc_re.acc >> self.macc_trunc),
-            im.eq(macc_im.acc >> self.macc_trunc),
+            re.eq(saturate(macc_re.acc >> self.macc_trunc, self.ow)),
+            im.eq(saturate(macc_im.acc >> self.macc_trunc, self.ow)),
         ]
         with m.If(macc_done_q[-1]):
             m.d.sync += [

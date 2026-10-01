@@ -104,6 +104,7 @@ class Recorder16IQ(Elaboratable):
         self.dropped_samples = Signal()
         self.next_address = Signal(axi_awidth)
         self.committed_address = Signal(axi_awidth)
+        self.wraps = Signal(16)
 
         self.dma_renamer = DomainRenamer({'sync': self.domain_dma})
         self.dma = self.dma_renamer(
@@ -229,6 +230,7 @@ class Recorder16IQ(Elaboratable):
             self.finished.eq(dma.finished),
             self.next_address.eq(dma.next_address),
             self.committed_address.eq(dma.committed_address),
+            self.wraps.eq(dma.wraps),
         ]
 
         return m

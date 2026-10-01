@@ -14,7 +14,7 @@ import numpy as np
 
 from .cmult import Cmult3x
 from .pluto_platform import PlutoPlatform
-from .util import clamp_nbits
+from .util import saturate_nbits, saturate
 
 
 class Mixer(Elaboratable):
@@ -24,9 +24,9 @@ class Mixer(Elaboratable):
     for the complex exponential function and a ``Cmult3x`` for the
     complex multiplication.
 
-    It is assumed that the input amplitude is not greater than
-    ``2**(width-1)-1``. Otherwise the output overflows due to the
-    rotation.
+    An input amplitude above ``2**(width-1)-1`` (I and Q both near full
+    scale) can exceed the output range after the rotation: the output
+    saturates then (it used to wrap around).
 
     Parameters
     ----------
@@ -99,10 +99,10 @@ class Mixer(Elaboratable):
         re_in, im_in = [np.array(a, 'int') for a in [re_in, im_in]]
         trunc = self.exp_width - 1
         round_up = 2**(trunc - 1)
-        re = clamp_nbits(
+        re = saturate_nbits(
             (re_in * cexp_re - im_in * cexp_im + round_up) >> trunc,
             self.w)
-        im = clamp_nbits(
+        im = saturate_nbits(
             (re_in * cexp_im + im_in * cexp_re + round_up) >> trunc,
             self.w)
         return re, im
@@ -144,9 +144,10 @@ class Mixer(Elaboratable):
             m.d.sync += [
                 cexp_mem_out.eq(rdport.data),
                 phase.eq(phase + self.frequency),
-                # round half-up
-                self.re_out.eq(cmult.re_out[0] + cmult.re_out[1:]),
-                self.im_out.eq(cmult.im_out[0] + cmult.im_out[1:]),
+                # round half-up, saturating (a full-scale input at the
+                # wrong phase used to wrap around)
+                self.re_out.eq(saturate(cmult.re_out[0] + cmult.re_out[1:].as_signed(), self.w)),
+                self.im_out.eq(saturate(cmult.im_out[0] + cmult.im_out[1:].as_signed(), self.w)),
             ]
         m.d.comb += [
             rdport.en.eq(self.clken),

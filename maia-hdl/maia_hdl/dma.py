@@ -221,7 +221,13 @@ class DmaStreamWrite(Elaboratable):
        running.
     stop : Signal(), in
        This signal should be pulsed for a clock cycle to stop the module before
-       it reaches the end address. It is undefined behaviour to pulse this
+       it reaches the end address. A burst whose address went out but whose
+       data has not come is completed with zeros (the stream may have
+       stopped too: before, the burst then waited for data that never came
+       and its write response landed in the next run's counters), and
+       ``finished`` follows every stop, also one while nothing was
+       outstanding or the module was stopped already. It is undefined
+       behaviour to pulse this
        signal while the module is stopped. The module will not stop
        immediately. It will finish its outstanding write bursts.
     finished : Signal(), out
@@ -236,6 +242,9 @@ class DmaStreamWrite(Elaboratable):
        The address following the last burst whose write response has been
        received: everything before it (back to where the ring was when the
        transfer started) is in memory. Wraps like the ring.
+    wraps : Signal(16), out
+       Ring mode: times ``committed_address`` wrapped to the start address
+       since the start (with it, software sees a reader lapped by the DMA).
     stream_data : Signal(width), in
        Stream data input.
     stream_valid : Signal(), in
@@ -259,6 +268,7 @@ class DmaStreamWrite(Elaboratable):
         self.finished = Signal()
         self.next_address = Signal(axi_awidth)
         self.committed_address = Signal(axi_awidth)
+        self.wraps = Signal(16)
         # Stream ports
         self.stream_data = Signal(width)
         self.stream_valid = Signal()
@@ -327,7 +337,7 @@ class DmaStreamWrite(Elaboratable):
         m.d.comb += beat_counter_next.eq(beat_counter + 1)
 
         m.d.comb += [
-            self.axi.wdata.eq(self.stream_data),
+            self.axi.wdata.eq(Mux(self.stream_valid, self.stream_data, 0)),
             self.axi.awlen.eq(2**burst_len_log2 - 1),
             self.axi.awburst.eq(axi.AxiBurst.INCR),
             # Normal non-cacheable buffereable memory
@@ -345,7 +355,8 @@ class DmaStreamWrite(Elaboratable):
         m.d.comb += self.committed_address.eq(committed_counter << addr_shift)
         with m.If(self.axi.bvalid & self.axi.bready):
             with m.If(committed_counter == last_burst):
-                m.d.sync += committed_counter.eq(axi_addr_counter_reset)
+                m.d.sync += [committed_counter.eq(axi_addr_counter_reset),
+                             self.wraps.eq(self.wraps + 1)]
             with m.Else():
                 m.d.sync += committed_counter.eq(committed_counter + 1)
 
@@ -364,10 +375,14 @@ class DmaStreamWrite(Elaboratable):
             m.d.sync += outstanding_b.eq(outstanding_b - 1)
 
         enable_w = Signal()
+        # stopped with a burst's address out: its beats go out regardless
+        # (zeros where the stream has none)
+        flush = Signal()
         m.d.comb += [
             enable_w.eq((one_outstanding_burst | two_outstanding_bursts)
                         & ~full_outstanding_b),
-            self.axi.wvalid.eq(enable_w & self.stream_valid),
+            flush.eq(~running),
+            self.axi.wvalid.eq(enable_w & (self.stream_valid | flush)),
             self.stream_ready.eq(enable_w & self.axi.wready),
         ]
         with m.If(self.axi.w_handshake()):
@@ -386,16 +401,21 @@ class DmaStreamWrite(Elaboratable):
                 running.eq(1),
                 axi_addr_counter.eq(axi_addr_counter_reset),
                 committed_counter.eq(axi_addr_counter_reset),
+                self.wraps.eq(0),
             ]
-        one_outstanding_burst_q = Signal()
-        no_outstanding_b_q = Signal(init=1)
-        m.d.sync += [
-            no_outstanding_b_q.eq(no_outstanding_b),
-            self.finished.eq(
-                ~running
-                & ~one_outstanding_burst & ~two_outstanding_bursts
-                & ~no_outstanding_b_q & no_outstanding_b),
-        ]
+        # finished: once after every stop (or the end address), when nothing
+        # is outstanding any more
+        fin_pending = Signal()
+        fin = Signal()
+        m.d.comb += fin.eq(
+            fin_pending & ~running & ~self.start
+            & ~one_outstanding_burst & ~two_outstanding_bursts
+            & no_outstanding_b)
+        m.d.sync += self.finished.eq(fin)
+        with m.If(fin):
+            m.d.sync += fin_pending.eq(0)
+        with m.If(self.stop | (running & addr_counter_end)):
+            m.d.sync += fin_pending.eq(1)
 
         return m
 

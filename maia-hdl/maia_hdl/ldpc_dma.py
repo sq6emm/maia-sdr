@@ -62,6 +62,9 @@ class LdpcDma(Elaboratable):
         # column-twist bit deinterleaver
         self.qam16 = Signal()
         self.a14 = Signal(20)
+        # sticky: a read or write burst was answered with an error response
+        # (SLVERR/DECERR: a bad address), cleared by go
+        self.axi_err = Signal()
         self.axi = axi.AxiInterface(
             axi.AxiDevice.MANAGER,
             [axi.AxiChannel(axi.AxiDirection.READ, 32, 64, id_bits=6),
@@ -123,6 +126,10 @@ class LdpcDma(Elaboratable):
                      a.wdata.eq(wd), a.wvalid.eq(wvalid), a.wlast.eq(nb == BURST - 1)]
         with m.If(a.bvalid):
             m.d.sync += bursts.eq(bursts - 1)
+        with m.If(self.go):
+            m.d.sync += self.axi_err.eq(0)
+        with m.Elif((a.rvalid & a.rready & (a.rresp != 0)) | (a.bvalid & (a.bresp != 0))):
+            m.d.sync += self.axi_err.eq(1)
 
         # ---- cells -> LLRs (4 stages) -> the decoder RAM, a byte a cycle
         n_cells = Signal(16)

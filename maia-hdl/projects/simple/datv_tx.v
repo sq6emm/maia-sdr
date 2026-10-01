@@ -2,10 +2,28 @@
 
 (* top =  1  *)
 (* generator = "Amaranth" *)
-module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_lite_wstrb, s_axi_lite_wvalid, s_axi_lite_bready, s_axi_lite_araddr, s_axi_lite_arprot, s_axi_lite_arvalid, s_axi_lite_rready, s_axis_tdata, s_axis_tvalid, m_axis_tready, clk, rst, s_axi_lite_awready, s_axi_lite_wready, s_axi_lite_bresp, s_axi_lite_bvalid, s_axi_lite_arready, s_axi_lite_rdata
-, s_axi_lite_rresp, s_axi_lite_rvalid, s_axis_tready, m_axis_tdata, m_axis_tvalid, s_axi_lite_awaddr);
-  wire [1:0] address;
-  wire [1:0] \address$32 ;
+module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_lite_wstrb, s_axi_lite_wvalid, s_axi_lite_bready, s_axi_lite_araddr, s_axi_lite_arprot, s_axi_lite_arvalid, s_axi_lite_rready, s_axis_tdata, s_axis_tvalid, m_axis_tready, underflows_gray, clk, rst, s_axi_lite_awready, s_axi_lite_wready, s_axi_lite_bresp, s_axi_lite_bvalid, s_axi_lite_arready
+, s_axi_lite_rdata, s_axi_lite_rresp, s_axi_lite_rvalid, s_axis_tready, m_axis_tdata, m_axis_tvalid, s_axi_lite_awaddr);
+  reg \$auto$verilog_backend.cc:2355:dump_module$1  = 0;
+  wire \$1 ;
+  wire \$10 ;
+  wire \$11 ;
+  wire \$12 ;
+  wire \$13 ;
+  wire \$14 ;
+  wire \$15 ;
+  wire \$16 ;
+  reg [15:0] \$17 ;
+  wire \$2 ;
+  wire \$3 ;
+  wire \$4 ;
+  wire \$5 ;
+  wire \$6 ;
+  wire \$7 ;
+  wire \$8 ;
+  wire \$9 ;
+  wire [2:0] address;
+  wire [2:0] \address$33 ;
   input clk;
   wire clk;
   wire [11:0] coeff_waddr;
@@ -15,6 +33,7 @@ module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_li
   wire [17:0] field_coeff_wdata;
   wire field_coeff_wren;
   wire [31:0] field_step;
+  reg [15:0] field_underflows = 16'h0000;
   wire [15:0] in_im;
   wire [15:0] in_re;
   wire in_ready;
@@ -30,23 +49,23 @@ module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_li
   wire out_ready;
   wire out_valid;
   wire [31:0] rdata;
-  wire [31:0] \rdata$36 ;
+  wire [31:0] \rdata$37 ;
   wire rdone;
-  wire \rdone$38 ;
+  wire \rdone$39 ;
   wire ren;
-  wire \ren$28 ;
+  wire \ren$29 ;
   input rst;
   wire rst;
-  input [3:0] s_axi_lite_araddr;
-  wire [3:0] s_axi_lite_araddr;
+  input [4:0] s_axi_lite_araddr;
+  wire [4:0] s_axi_lite_araddr;
   input [2:0] s_axi_lite_arprot;
   wire [2:0] s_axi_lite_arprot;
   output s_axi_lite_arready;
   wire s_axi_lite_arready;
   input s_axi_lite_arvalid;
   wire s_axi_lite_arvalid;
-  input [3:0] s_axi_lite_awaddr;
-  wire [3:0] s_axi_lite_awaddr;
+  input [4:0] s_axi_lite_awaddr;
+  wire [4:0] s_axi_lite_awaddr;
   input [2:0] s_axi_lite_awprot;
   wire [2:0] s_axi_lite_awprot;
   output s_axi_lite_awready;
@@ -82,12 +101,33 @@ module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_li
   input s_axis_tvalid;
   wire s_axis_tvalid;
   wire [31:0] step;
+  wire [15:0] und;
+  wire [15:0] und_sync;
+  input [15:0] underflows_gray;
+  wire [15:0] underflows_gray;
   wire [31:0] wdata;
-  wire [31:0] \wdata$34 ;
+  wire [31:0] \wdata$35 ;
   wire wdone;
-  wire \wdone$40 ;
+  wire \wdone$41 ;
   wire [3:0] wstrobe;
-  wire [3:0] \wstrobe$30 ;
+  wire [3:0] \wstrobe$31 ;
+  assign \$1  = ^ und_sync;
+  assign \$2  = ^ und_sync[15:1];
+  assign \$3  = ^ und_sync[15:2];
+  assign \$4  = ^ und_sync[15:3];
+  assign \$5  = ^ und_sync[15:4];
+  assign \$6  = ^ und_sync[15:5];
+  assign \$7  = ^ und_sync[15:6];
+  assign \$8  = ^ und_sync[15:7];
+  assign \$9  = ^ und_sync[15:8];
+  assign \$10  = ^ und_sync[15:9];
+  assign \$11  = ^ und_sync[15:10];
+  assign \$12  = ^ und_sync[15:11];
+  assign \$13  = ^ und_sync[15:12];
+  assign \$14  = ^ und_sync[15:13];
+  assign \$15  = ^ und_sync[15:14];
+  always @(posedge clk)
+    field_underflows <= \$17 ;
   \datv_tx.axi4lite  axi4lite (
     .address(address),
     .clk(clk),
@@ -119,7 +159,7 @@ module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_li
     .out_re(out_re),
     .out_ready(m_axis_tready),
     .out_valid(m_axis_tvalid),
-    .\port$0$57 (s_axis_tdata),
+    .\port$0$59 (s_axis_tdata),
     .rst(rst),
     .step(step),
     .wr__addr(coeff_waddr),
@@ -133,6 +173,7 @@ module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_li
     .field_coeff_wdata(coeff_wdata),
     .field_coeff_wren(coeff_wren),
     .field_step(step),
+    .field_underflows(field_underflows),
     .rdata(rdata),
     .rdone(rdone),
     .\ren$3 (s_axi_lite_arready),
@@ -141,15 +182,28 @@ module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_li
     .wdone(wdone),
     .\wstrobe$5 (wstrobe)
   );
+  \datv_tx.und_cdc  und_cdc (
+    .clk(clk),
+    .rst(rst),
+    .stage1(und_sync),
+    .underflows_gray(underflows_gray)
+  );
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$17  = und;
+    if (rst) begin
+      \$17  = 16'h0000;
+    end
+  end
   assign ren = s_axi_lite_arready;
-  assign \ren$28  = s_axi_lite_arready;
-  assign \wstrobe$30  = wstrobe;
-  assign \address$32  = address;
+  assign \ren$29  = s_axi_lite_arready;
+  assign \wstrobe$31  = wstrobe;
+  assign \address$33  = address;
   assign wdata = s_axi_lite_wdata;
-  assign \wdata$34  = s_axi_lite_wdata;
-  assign \rdata$36  = rdata;
-  assign \rdone$38  = rdone;
-  assign \wdone$40  = wdone;
+  assign \wdata$35  = s_axi_lite_wdata;
+  assign \rdata$37  = rdata;
+  assign \rdone$39  = rdone;
+  assign \wdone$41  = wdone;
   assign field_step = step;
   assign field_coeff_waddr = coeff_waddr;
   assign field_coeff_wdata = coeff_wdata;
@@ -164,20 +218,37 @@ module datv_tx(s_axi_lite_awprot, s_axi_lite_awvalid, s_axi_lite_wdata, s_axi_li
   assign s_axi_lite_bresp = 2'h0;
   assign s_axi_lite_rresp = 2'h0;
   assign m_axis_tdata = { out_re, out_im };
+  assign und[15] = \$16 ;
+  assign und[14] = \$15 ;
+  assign und[13] = \$14 ;
+  assign und[12] = \$13 ;
+  assign und[11] = \$12 ;
+  assign und[10] = \$11 ;
+  assign und[9] = \$10 ;
+  assign und[8] = \$9 ;
+  assign und[7] = \$8 ;
+  assign und[6] = \$7 ;
+  assign und[5] = \$6 ;
+  assign und[4] = \$5 ;
+  assign und[3] = \$4 ;
+  assign und[2] = \$3 ;
+  assign und[1] = \$2 ;
+  assign und[0] = \$1 ;
+  assign \$16  = und_sync[15];
 endmodule
 
 (* generator = "Amaranth" *)
 module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lite_wvalid, s_axi_lite_bready, s_axi_lite_araddr, s_axi_lite_arvalid, s_axi_lite_rready, clk, rst, s_axi_lite_awready, s_axi_lite_arready, wstrobe, address, s_axi_lite_bvalid, s_axi_lite_rdata, s_axi_lite_rvalid, rdata, rdone, wdone, s_axi_lite_awaddr
 );
-  reg \$auto$verilog_backend.cc:2355:dump_module$1  = 0;
+  reg \$auto$verilog_backend.cc:2355:dump_module$2  = 0;
   wire \$1 ;
   wire \$10 ;
   wire \$11 ;
   wire \$12 ;
   wire [3:0] \$13 ;
-  wire [3:0] \$14 ;
-  wire [3:0] \$15 ;
-  wire [3:0] \$16 ;
+  wire [4:0] \$14 ;
+  wire [4:0] \$15 ;
+  wire [4:0] \$16 ;
   wire \$17 ;
   wire \$18 ;
   wire \$19 ;
@@ -201,8 +272,8 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
   wire \$7 ;
   wire \$8 ;
   wire \$9 ;
-  output [1:0] address;
-  reg [1:0] address = 2'h0;
+  output [2:0] address;
+  reg [2:0] address = 3'h0;
   reg busy = 1'h0;
   input clk;
   wire clk;
@@ -214,14 +285,14 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
   wire ren;
   input rst;
   wire rst;
-  input [3:0] s_axi_lite_araddr;
-  wire [3:0] s_axi_lite_araddr;
+  input [4:0] s_axi_lite_araddr;
+  wire [4:0] s_axi_lite_araddr;
   output s_axi_lite_arready;
   reg s_axi_lite_arready = 1'h0;
   input s_axi_lite_arvalid;
   wire s_axi_lite_arvalid;
-  input [3:0] s_axi_lite_awaddr;
-  wire [3:0] s_axi_lite_awaddr;
+  input [4:0] s_axi_lite_awaddr;
+  wire [4:0] s_axi_lite_awaddr;
   output s_axi_lite_awready;
   reg s_axi_lite_awready = 1'h0;
   input s_axi_lite_awvalid;
@@ -288,7 +359,7 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
   always @(posedge clk)
     wstrobe <= \$26 ;
   always @(posedge clk)
-    address <= \$16 [1:0];
+    address <= \$16 [2:0];
   always @(posedge clk)
     busy <= \$27 ;
   always @(posedge clk)
@@ -300,28 +371,28 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
   always @(posedge clk)
     s_axi_lite_rvalid <= \$31 ;
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$24  = start_write;
     if (rst) begin
       \$24  = 1'h0;
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$25  = start_read;
     if (rst) begin
       \$25  = 1'h0;
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$26  = \$13 ;
     if (rst) begin
       \$26  = 4'h0;
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$27  = busy;
     if (\$19 ) begin
       \$27  = 1'h0;
@@ -334,7 +405,7 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$28  = write_preference;
     if (\$20 ) begin
       \$28  = \$21 ;
@@ -344,7 +415,7 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$29  = s_axi_lite_bvalid;
     if (wdone) begin
       \$29  = 1'h1;
@@ -357,14 +428,14 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$30  = s_axi_lite_rdata;
     if (rdone) begin
       \$30  = rdata;
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
     \$31  = s_axi_lite_rvalid;
     if (rdone) begin
       \$31  = 1'h1;
@@ -383,13 +454,13 @@ module \datv_tx.axi4lite (s_axi_lite_awvalid, wdata, s_axi_lite_wstrb, s_axi_lit
   assign s_axi_lite_wdata = wdata;
   assign s_axi_lite_bresp = 2'h0;
   assign s_axi_lite_rresp = 2'h0;
-  assign \$14  = { 2'h0, s_axi_lite_awaddr[3:2] };
-  assign \$15  = { 2'h0, s_axi_lite_araddr[3:2] };
+  assign \$14  = { 2'h0, s_axi_lite_awaddr[4:2] };
+  assign \$15  = { 2'h0, s_axi_lite_araddr[4:2] };
 endmodule
 
 (* generator = "Amaranth" *)
-module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, wr__data, in_ready, out_valid, out_re, out_im, \port$0$57 );
-  reg \$auto$verilog_backend.cc:2355:dump_module$2  = 0;
+module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, wr__data, in_ready, out_valid, out_re, out_im, \port$0$59 );
+  reg \$auto$verilog_backend.cc:2355:dump_module$3  = 0;
   wire \$1 ;
   wire \$10 ;
   wire \$11 ;
@@ -532,8 +603,8 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
   output out_valid;
   reg out_valid = 1'h0;
   reg [7:0] phase = 8'h00;
-  input [31:0] \port$0$57 ;
-  wire [31:0] \port$0$57 ;
+  input [31:0] \port$0$59 ;
+  wire [31:0] \port$0$59 ;
   reg [33:0] prod_im = 34'h000000000;
   reg [33:0] prod_re = 34'h000000000;
   reg prod_valid = 1'h0;
@@ -4782,7 +4853,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
   assign \$13  = k < 5'h10;
   assign \$15  = $signed(rd__data) * $signed(\$14 );
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$16  = 16'h0000;
     casez (k_d)
       5'h00:
@@ -4820,7 +4891,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     endcase
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     nxt = 33'h000000000;
     casez (fsm_state)
       2'h0:
@@ -4830,7 +4901,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     endcase
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     in_ready = 1'h0;
     casez (fsm_state)
       2'h0:
@@ -4840,7 +4911,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     endcase
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$39  = out_valid;
     if (\$8 ) begin
       \$39  = 1'h0;
@@ -4861,7 +4932,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$40  = acc;
     casez (fsm_state)
       2'h0:
@@ -4874,7 +4945,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$41  = phase;
     casez (fsm_state)
       2'h0:
@@ -4887,7 +4958,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$42  = fsm_state;
     (* full_case = 32'd1 *)
     casez (fsm_state)
@@ -4916,7 +4987,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$43  = k;
     casez (fsm_state)
       2'h0:
@@ -4941,7 +5012,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$44  = k_valid;
     casez (fsm_state)
       2'h0:
@@ -4964,7 +5035,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$45  = prod_valid;
     casez (fsm_state)
       2'h0:
@@ -4987,7 +5058,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$46  = sum_re;
     casez (fsm_state)
       2'h0:
@@ -5012,7 +5083,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$47  = sum_im;
     casez (fsm_state)
       2'h0:
@@ -5037,14 +5108,14 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$48  = hre0;
     casez (fsm_state)
       2'h0:
           /* empty */;
       2'h1:
           if (in_valid) begin
-            \$48  = \port$0$57 [15:0];
+            \$48  = \port$0$59 [15:0];
           end
     endcase
     if (rst) begin
@@ -5052,14 +5123,14 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$49  = him0;
     casez (fsm_state)
       2'h0:
           /* empty */;
       2'h1:
           if (in_valid) begin
-            \$49  = \port$0$57 [31:16];
+            \$49  = \port$0$59 [31:16];
           end
     endcase
     if (rst) begin
@@ -5067,7 +5138,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$50  = hre1;
     casez (fsm_state)
       2'h0:
@@ -5082,7 +5153,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$51  = hre2;
     casez (fsm_state)
       2'h0:
@@ -5097,7 +5168,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$52  = hre3;
     casez (fsm_state)
       2'h0:
@@ -5112,7 +5183,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$53  = hre4;
     casez (fsm_state)
       2'h0:
@@ -5127,7 +5198,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$54  = hre5;
     casez (fsm_state)
       2'h0:
@@ -5142,7 +5213,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$55  = hre6;
     casez (fsm_state)
       2'h0:
@@ -5157,7 +5228,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$56  = hre7;
     casez (fsm_state)
       2'h0:
@@ -5172,7 +5243,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$57  = hre8;
     casez (fsm_state)
       2'h0:
@@ -5187,7 +5258,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$58  = hre9;
     casez (fsm_state)
       2'h0:
@@ -5202,7 +5273,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$59  = hre10;
     casez (fsm_state)
       2'h0:
@@ -5217,7 +5288,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$60  = hre11;
     casez (fsm_state)
       2'h0:
@@ -5232,7 +5303,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$61  = hre12;
     casez (fsm_state)
       2'h0:
@@ -5247,7 +5318,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$62  = hre13;
     casez (fsm_state)
       2'h0:
@@ -5262,7 +5333,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$63  = hre14;
     casez (fsm_state)
       2'h0:
@@ -5277,7 +5348,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$64  = hre15;
     casez (fsm_state)
       2'h0:
@@ -5292,7 +5363,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$65  = him1;
     casez (fsm_state)
       2'h0:
@@ -5307,7 +5378,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$66  = him2;
     casez (fsm_state)
       2'h0:
@@ -5322,7 +5393,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$67  = him3;
     casez (fsm_state)
       2'h0:
@@ -5337,7 +5408,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$68  = him4;
     casez (fsm_state)
       2'h0:
@@ -5352,7 +5423,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$69  = him5;
     casez (fsm_state)
       2'h0:
@@ -5367,7 +5438,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$70  = him6;
     casez (fsm_state)
       2'h0:
@@ -5382,7 +5453,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$71  = him7;
     casez (fsm_state)
       2'h0:
@@ -5397,7 +5468,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$72  = him8;
     casez (fsm_state)
       2'h0:
@@ -5412,7 +5483,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$73  = him9;
     casez (fsm_state)
       2'h0:
@@ -5427,7 +5498,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$74  = him10;
     casez (fsm_state)
       2'h0:
@@ -5442,7 +5513,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$75  = him11;
     casez (fsm_state)
       2'h0:
@@ -5457,7 +5528,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$76  = him12;
     casez (fsm_state)
       2'h0:
@@ -5472,7 +5543,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$77  = him13;
     casez (fsm_state)
       2'h0:
@@ -5487,7 +5558,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$78  = him14;
     casez (fsm_state)
       2'h0:
@@ -5502,7 +5573,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$79  = him15;
     casez (fsm_state)
       2'h0:
@@ -5517,7 +5588,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$80  = k_d;
     casez (fsm_state)
       2'h0:
@@ -5532,7 +5603,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$81  = prod_re;
     casez (fsm_state)
       2'h0:
@@ -5549,7 +5620,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$82  = prod_im;
     casez (fsm_state)
       2'h0:
@@ -5566,7 +5637,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$83  = out_re;
     (* full_case = 32'd1 *)
     casez (fsm_state)
@@ -5584,7 +5655,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$84  = out_im;
     (* full_case = 32'd1 *)
     casez (fsm_state)
@@ -5602,7 +5673,7 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$2 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
     \$14  = 16'h0000;
     casez (k_d)
       5'h00:
@@ -5643,8 +5714,8 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
   assign coeff_wdata = wr__data;
   assign coeff_wren = wr__en;
   assign rd__addr = { k[3:0], phase };
-  assign in_re = \port$0$57 [15:0];
-  assign in_im = \port$0$57 [31:16];
+  assign in_re = \port$0$59 [15:0];
+  assign in_im = \port$0$59 [31:16];
   assign \$25  = { sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38:17] };
   assign \$27  = { sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38:17] };
   assign \$29  = { sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38], sum_re[38:17] };
@@ -5654,21 +5725,23 @@ module \datv_tx.interp (in_valid, out_ready, clk, rst, step, wr__addr, wr__en, w
 endmodule
 
 (* generator = "Amaranth" *)
-module \datv_tx.registers (clk, rst, \ren$3 , \wstrobe$5 , address, rdata, rdone, wdone, field_step, field_coeff_waddr, field_coeff_wren, field_coeff_wdata, wdata);
-  reg \$auto$verilog_backend.cc:2355:dump_module$3  = 0;
+module \datv_tx.registers (clk, rst, field_underflows, \ren$3 , \wstrobe$5 , address, rdata, rdone, wdone, field_step, field_coeff_waddr, field_coeff_wren, field_coeff_wdata, wdata);
+  reg \$auto$verilog_backend.cc:2355:dump_module$4  = 0;
   wire \$1 ;
-  reg \$10 ;
-  reg \$11 ;
+  wire [31:0] \$10 ;
+  wire \$11 ;
+  reg \$12 ;
+  reg \$13 ;
   wire \$2 ;
   wire \$3 ;
   wire \$4 ;
-  wire [31:0] \$5 ;
+  wire \$5 ;
   wire [31:0] \$6 ;
   wire [31:0] \$7 ;
   wire [31:0] \$8 ;
-  wire \$9 ;
-  input [1:0] address;
-  wire [1:0] address;
+  wire [31:0] \$9 ;
+  input [2:0] address;
+  wire [2:0] address;
   input clk;
   wire clk;
   output [11:0] field_coeff_waddr;
@@ -5679,18 +5752,22 @@ module \datv_tx.registers (clk, rst, \ren$3 , \wstrobe$5 , address, rdata, rdone
   wire field_coeff_wren;
   output [31:0] field_step;
   wire [31:0] field_step;
+  input [15:0] field_underflows;
+  wire [15:0] field_underflows;
   output [31:0] rdata;
   reg [31:0] rdata = 32'd0;
-  wire [31:0] \rdata$20 ;
-  wire [31:0] \rdata$21 ;
-  wire [31:0] \rdata$22 ;
   wire [31:0] \rdata$23 ;
+  wire [31:0] \rdata$24 ;
+  wire [31:0] \rdata$25 ;
+  wire [31:0] \rdata$26 ;
+  wire [31:0] \rdata$27 ;
   output rdone;
   reg rdone = 1'h0;
-  wire [3:0] reg_enable;
+  wire [4:0] reg_enable;
   wire ren;
   wire \ren$11 ;
   wire \ren$14 ;
+  wire \ren$17 ;
   input \ren$3 ;
   wire \ren$3 ;
   wire \ren$8 ;
@@ -5701,12 +5778,14 @@ module \datv_tx.registers (clk, rst, \ren$3 , \wstrobe$5 , address, rdata, rdone
   wire [31:0] \wdata$10 ;
   wire [31:0] \wdata$13 ;
   wire [31:0] \wdata$16 ;
+  wire [31:0] \wdata$19 ;
   wire [31:0] \wdata$7 ;
   output wdone;
   reg wdone = 1'h0;
   wire [3:0] wstrobe;
   wire [3:0] \wstrobe$12 ;
   wire [3:0] \wstrobe$15 ;
+  wire [3:0] \wstrobe$18 ;
   input [3:0] \wstrobe$5 ;
   wire [3:0] \wstrobe$5 ;
   wire [3:0] \wstrobe$9 ;
@@ -5722,21 +5801,25 @@ module \datv_tx.registers (clk, rst, \ren$3 , \wstrobe$5 , address, rdata, rdone
   assign \$4  = address == 2'h3;
   assign \ren$14  = \ren$3  & reg_enable[3];
   assign \wstrobe$15  = reg_enable[3] ? \wstrobe$5  : 4'h0;
-  assign \$6  = \$5  | \rdata$21 ;
-  assign \$7  = \$6  | \rdata$22 ;
-  assign \$8  = \$7  | \rdata$23 ;
-  assign \$9  = | \wstrobe$5 ;
+  assign \$5  = address == 3'h4;
+  assign \ren$17  = \ren$3  & reg_enable[4];
+  assign \wstrobe$18  = reg_enable[4] ? \wstrobe$5  : 4'h0;
+  assign \$7  = \$6  | \rdata$24 ;
+  assign \$8  = \$7  | \rdata$25 ;
+  assign \$9  = \$8  | \rdata$26 ;
+  assign \$10  = \$9  | \rdata$27 ;
+  assign \$11  = | \wstrobe$5 ;
   always @(posedge clk)
-    rdata <= \$8 ;
+    rdata <= \$10 ;
   always @(posedge clk)
-    rdone <= \$10 ;
+    rdone <= \$12 ;
   always @(posedge clk)
-    wdone <= \$11 ;
+    wdone <= \$13 ;
   \datv_tx.registers.coeff  coeff (
     .clk(clk),
     .field_coeff_wdata(field_coeff_wdata),
     .field_coeff_wren(field_coeff_wren),
-    .rdata(\rdata$22 ),
+    .rdata(\rdata$25 ),
     .ren(\ren$11 ),
     .rst(rst),
     .wdata(wdata),
@@ -5745,53 +5828,60 @@ module \datv_tx.registers (clk, rst, \ren$3 , \wstrobe$5 , address, rdata, rdone
   \datv_tx.registers.coeff_addr  coeff_addr (
     .clk(clk),
     .field_coeff_waddr(field_coeff_waddr),
-    .rdata(\rdata$21 ),
+    .rdata(\rdata$24 ),
     .ren(\ren$8 ),
     .rst(rst),
     .wdata(wdata),
     .wstrobe(\wstrobe$9 )
   );
   \datv_tx.registers.id  id (
-    .rdata(\rdata$23 ),
+    .rdata(\rdata$26 ),
     .ren(\ren$14 )
   );
   \datv_tx.registers.step  step (
     .clk(clk),
     .field_step(field_step),
-    .rdata(\rdata$20 ),
+    .rdata(\rdata$23 ),
     .ren(ren),
     .rst(rst),
     .wdata(wdata),
     .wstrobe(wstrobe)
   );
+  \datv_tx.registers.underflows  underflows (
+    .field_underflows(field_underflows),
+    .rdata(\rdata$27 ),
+    .ren(\ren$17 )
+  );
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
-    \$10  = \ren$3 ;
+    if (\$auto$verilog_backend.cc:2355:dump_module$4 ) begin end
+    \$12  = \ren$3 ;
     if (rst) begin
-      \$10  = 1'h0;
+      \$12  = 1'h0;
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$3 ) begin end
-    \$11  = \$9 ;
+    if (\$auto$verilog_backend.cc:2355:dump_module$4 ) begin end
+    \$13  = \$11 ;
     if (rst) begin
-      \$11  = 1'h0;
+      \$13  = 1'h0;
     end
   end
   assign \wdata$7  = wdata;
   assign \wdata$10  = wdata;
   assign \wdata$13  = wdata;
   assign \wdata$16  = wdata;
+  assign \wdata$19  = wdata;
+  assign reg_enable[4] = \$5 ;
   assign reg_enable[3] = \$4 ;
   assign reg_enable[2] = \$3 ;
   assign reg_enable[1] = \$2 ;
   assign reg_enable[0] = \$1 ;
-  assign \$5  = \rdata$20 ;
+  assign \$6  = \rdata$23 ;
 endmodule
 
 (* generator = "Amaranth" *)
 module \datv_tx.registers.coeff (clk, rst, ren, wstrobe, rdata, field_coeff_wren, field_coeff_wdata, wdata);
-  reg \$auto$verilog_backend.cc:2355:dump_module$4  = 0;
+  reg \$auto$verilog_backend.cc:2355:dump_module$5  = 0;
   reg \$1 ;
   reg [17:0] \$2 ;
   input clk;
@@ -5815,7 +5905,7 @@ module \datv_tx.registers.coeff (clk, rst, ren, wstrobe, rdata, field_coeff_wren
   always @(posedge clk)
     field_coeff_wdata <= \$2 ;
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$4 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
     rdata = 32'd0;
     if (ren) begin
       rdata = 32'd0;
@@ -5825,7 +5915,7 @@ module \datv_tx.registers.coeff (clk, rst, ren, wstrobe, rdata, field_coeff_wren
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$4 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
     \$1  = 1'h0;
     if (wstrobe[0]) begin
       \$1  = wdata[0];
@@ -5835,7 +5925,7 @@ module \datv_tx.registers.coeff (clk, rst, ren, wstrobe, rdata, field_coeff_wren
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$4 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
     \$2  = field_coeff_wdata;
     if (wstrobe[0]) begin
       \$2 [0] = wdata[1];
@@ -5869,7 +5959,7 @@ endmodule
 
 (* generator = "Amaranth" *)
 module \datv_tx.registers.coeff_addr (clk, rst, ren, wstrobe, rdata, field_coeff_waddr, wdata);
-  reg \$auto$verilog_backend.cc:2355:dump_module$5  = 0;
+  reg \$auto$verilog_backend.cc:2355:dump_module$6  = 0;
   reg [11:0] \$1 ;
   input clk;
   wire clk;
@@ -5888,7 +5978,7 @@ module \datv_tx.registers.coeff_addr (clk, rst, ren, wstrobe, rdata, field_coeff
   always @(posedge clk)
     field_coeff_waddr <= \$1 ;
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$6 ) begin end
     rdata = 32'd0;
     if (ren) begin
       rdata = 32'd0;
@@ -5898,7 +5988,7 @@ module \datv_tx.registers.coeff_addr (clk, rst, ren, wstrobe, rdata, field_coeff
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$6 ) begin end
     \$1  = field_coeff_waddr;
     if (wstrobe[0]) begin
       \$1 [0] = wdata[0];
@@ -5924,28 +6014,28 @@ endmodule
 
 (* generator = "Amaranth" *)
 module \datv_tx.registers.id (rdata, ren);
-  reg \$auto$verilog_backend.cc:2355:dump_module$6  = 0;
+  reg \$auto$verilog_backend.cc:2355:dump_module$7  = 0;
   wire [31:0] field_id;
   output [31:0] rdata;
   reg [31:0] rdata;
   input ren;
   wire ren;
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$6 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$7 ) begin end
     rdata = 32'd0;
     if (ren) begin
       rdata = 32'd0;
     end
     if (ren) begin
-      rdata = 32'd844649540;
+      rdata = 32'd861426756;
     end
   end
-  assign field_id = 32'd844649540;
+  assign field_id = 32'd861426756;
 endmodule
 
 (* generator = "Amaranth" *)
 module \datv_tx.registers.step (clk, rst, ren, wstrobe, rdata, field_step, wdata);
-  reg \$auto$verilog_backend.cc:2355:dump_module$7  = 0;
+  reg \$auto$verilog_backend.cc:2355:dump_module$8  = 0;
   reg [31:0] \$1 ;
   input clk;
   wire clk;
@@ -5964,7 +6054,7 @@ module \datv_tx.registers.step (clk, rst, ren, wstrobe, rdata, field_step, wdata
   always @(posedge clk)
     field_step <= \$1 ;
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$7 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$8 ) begin end
     rdata = 32'd0;
     if (ren) begin
       rdata = 32'd0;
@@ -5974,7 +6064,7 @@ module \datv_tx.registers.step (clk, rst, ren, wstrobe, rdata, field_step, wdata
     end
   end
   always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$7 ) begin end
+    if (\$auto$verilog_backend.cc:2355:dump_module$8 ) begin end
     \$1  = field_step;
     if (wstrobe[0]) begin
       \$1 [0] = wdata[0];
@@ -6020,4 +6110,45 @@ module \datv_tx.registers.step (clk, rst, ren, wstrobe, rdata, field_step, wdata
       \$1  = 32'd0;
     end
   end
+endmodule
+
+(* generator = "Amaranth" *)
+module \datv_tx.registers.underflows (field_underflows, rdata, ren);
+  reg \$auto$verilog_backend.cc:2355:dump_module$9  = 0;
+  input [15:0] field_underflows;
+  wire [15:0] field_underflows;
+  output [31:0] rdata;
+  reg [31:0] rdata;
+  input ren;
+  wire ren;
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$9 ) begin end
+    rdata = 32'd0;
+    if (ren) begin
+      rdata = 32'd0;
+    end
+    if (ren) begin
+      rdata[15:0] = field_underflows;
+    end
+  end
+endmodule
+
+(* generator = "Amaranth" *)
+module \datv_tx.und_cdc (clk, rst, stage1, underflows_gray);
+  input clk;
+  wire clk;
+  input rst;
+  wire rst;
+  reg [15:0] stage0 = 16'h0000;
+  output [15:0] stage1;
+  reg [15:0] stage1 = 16'h0000;
+  (* init = 16'h0000 *)
+  wire [15:0] und_sync;
+  input [15:0] underflows_gray;
+  wire [15:0] underflows_gray;
+  always @(posedge clk)
+    stage0 <= underflows_gray;
+  always @(posedge clk)
+    stage1 <= stage0;
+  assign und_sync = stage1;
 endmodule

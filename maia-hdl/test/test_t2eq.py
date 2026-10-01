@@ -79,8 +79,10 @@ class TestT2Eq(AmaranthSim):
         built = [make_symbol(j, rng, fc) for j, fc in syms]
         g = built[0][1]          # one channel for all (the same h)
         words_in, want = [], []
+        hdr_at = {}
         for (j, fc), (x, _, car) in zip(syms, built):
             payload = j | (12345 << 8)
+            hdr_at[j] = len(words_in)
             words_in.append(pack_header(payload))
             words_in += [pack(a, b) for a, b in car]
             if j >= regs['p2']:
@@ -110,7 +112,19 @@ class TestT2Eq(AmaranthSim):
             # the front end's pace: a word every 54 cycles (a sample at
             # 1.845 MS/s), into a 32-word FIFO that must never fill
             at, cycles, fifo, worst = 0, 0, [], 0
+            # gshift changed in the middle of the first equalized symbol
+            # and back before the next header: the symbol keeps the shift
+            # it started with (latched with gbank)
+            j0, j1 = syms[0][0], syms[1][0]     # 10: equalized, then 3
+            consumed, poked = 0, None
             while len(got) < len(want) and cycles < 800_000:
+                if poked is None and consumed > hdr_at[j0] + 100:
+                    ctx.set(dut.gshift, GSHIFT + 3)
+                    self.assertEqual(ctx.get(dut.gbank_used), 1)
+                    poked = True
+                if poked and at == hdr_at[j1]:
+                    ctx.set(dut.gshift, GSHIFT)
+                    poked = False
                 if cycles % 54 == 0 and at < len(words_in):
                     fifo.append(words_in[at])
                     at += 1
@@ -126,11 +140,14 @@ class TestT2Eq(AmaranthSim):
                 await ctx.tick()
                 if took:
                     fifo.pop(0)
+                    consumed += 1
                 cycles += 1
             self.worst = worst
             self.cycles = cycles
+            self.poked = poked
 
         self.simulate(bench)
+        self.assertEqual(self.poked, False)
         print(f'{self.cycles} cycles, {len(got)} of {len(want)} words, FIFO at most {self.worst}')
         self.assertEqual(len(got), len(want))
         bad = [i for i in range(len(want)) if got[i] != want[i]]

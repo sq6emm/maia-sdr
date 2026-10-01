@@ -104,6 +104,7 @@ ad_connect util_ad9361_divclk/clk_out datv_merge_0/clk
 ad_connect datv_slice/Dout datv_merge_0/sel_async
 ad_connect axi_ad9361_dac_fifo/din_valid_0 datv_merge_0/req
 ad_connect datv_fifo_out/M_AXIS datv_merge_0/s_axis
+ad_connect datv_merge_0/underflows_gray datv_tx_0/underflows_gray
 if {[info exists xo_corrector]} {
     simple_disconnect_sink iq_xo_corrector/tx_i0_in
     simple_disconnect_sink iq_xo_corrector/tx_q0_in

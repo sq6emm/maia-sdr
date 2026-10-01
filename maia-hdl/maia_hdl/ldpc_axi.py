@@ -9,7 +9,10 @@
                  read the decisions (sign bits). Only while not busy.
   0xFF00  control  W: bit 0 start; bit 1 rate (0 = 1/2, 1 = 3/4);
                    bits 13:8 maximum iterations
-  0xFF04  status   R: bit 0 busy, bit 1 converged, bits 13:8 iterations
+  0xFF04  status   R: bit 0 busy, bit 1 converged, bit 2 AXI error (DDR
+                   engine: a burst answered SLVERR/DECERR, sticky until
+                   the next start), bits 13:8 iterations, bits 31:24
+                   decodes finished (counts every busy -> idle)
   0xFF08  id       "LDP1" (lanes 4: "LDP4", ldpc_dec4.py, whose parity
                    words are laid out in banks: see there; with the DDR
                    engine, ldpc_dma.py: "LDP6")
@@ -21,6 +24,14 @@
   makes the LLRs, ldpc_dma.py), bit 1 rotated, bit 2 load only (tests),
   bit 3 16QAM (four LLRs a cell and the bit deinterleaver, id "LDP6");
   0xFF24 kq; 0xFF28 c14 (15:0), s14 (31:16); 0xFF2C a14 (16QAM level).
+  0xFF30 features R: bit 0 the finished counter in status 31:24, bit 1 the
+                   AXI error bit, bit 2 configuration writes ignored while
+                   busy (0 on older cores: the register reads 0).
+
+Writes to the configuration registers (0xFF00 rate/iterations and
+0xFF10-0xFF2C) are ignored while the decoder or the DDR engine is busy, as
+are writes to the RAM: a start, or new addresses, written over a decode
+still running would otherwise change the frame under it.
 """
 
 import argparse
@@ -93,6 +104,13 @@ class LdpcAxi(Elaboratable):
         if dma:
             m.submodules.dma = DomainRenamer('dec')(dma)
 
+        # decodes finished: busy falling
+        busy_q = Signal()
+        done_count = Signal(8)
+        m.d.sync += busy_q.eq(busy)
+        with m.If(busy_q & ~busy):
+            m.d.sync += done_count.eq(done_count + 1)
+
         is_reg_w = self.s_axi_awaddr[8:] == 0xFF
         is_reg_r = self.s_axi_araddr[8:] == 0xFF
         m.d.comb += [self.s_axi_bresp.eq(0), self.s_axi_rresp.eq(0)]  # OKAY
@@ -102,7 +120,7 @@ class LdpcAxi(Elaboratable):
             with m.State('IDLE'):
                 with m.If(self.s_axi_awvalid & self.s_axi_wvalid):
                     m.d.comb += [self.s_axi_awready.eq(1), self.s_axi_wready.eq(1)]
-                    with m.If(is_reg_w):
+                    with m.If(is_reg_w & ~busy):
                         with m.If(self.s_axi_awaddr[:8] == 0x00):
                             m.d.sync += [rate.eq(self.s_axi_wdata[1]),
                                          max_iter.eq(self.s_axi_wdata[8:14])]
@@ -147,9 +165,13 @@ class LdpcAxi(Elaboratable):
                             m.d.sync += rd_regval.eq(Cat(C(0, 1), rate, C(0, 6), max_iter))
                         with m.Case(0x04):
                             m.d.sync += rd_regval.eq(Cat(busy, dec.converged,
-                                                         C(0, 6), dec.iterations))
+                                                         dma.axi_err if dma else C(0, 1),
+                                                         C(0, 5), dec.iterations,
+                                                         C(0, 10), done_count))
                         with m.Case(0x08):
                             m.d.sync += rd_regval.eq(self.id)
+                        with m.Case(0x30):
+                            m.d.sync += rd_regval.eq(0b101 | ((1 if dma else 0) << 1))
                         with m.Default():
                             m.d.sync += rd_regval.eq(0)
                     m.d.comb += [dec.cpu_addr.eq(self.s_axi_araddr[2:]),

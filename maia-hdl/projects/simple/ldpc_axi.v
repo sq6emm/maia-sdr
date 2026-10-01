@@ -8,7 +8,7 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   reg \$auto$verilog_backend.cc:2355:dump_module$1  = 0;
   wire \$1 ;
   wire \$10 ;
-  wire \$11 ;
+  wire [31:0] \$11 ;
   wire \$12 ;
   wire \$13 ;
   wire \$14 ;
@@ -24,40 +24,51 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   wire \$23 ;
   wire \$24 ;
   wire \$25 ;
-  reg \$26 ;
-  reg [5:0] \$27 ;
-  reg [31:0] \$28 ;
-  reg [31:0] \$29 ;
-  wire \$3 ;
-  reg [14:0] \$30 ;
-  reg [11:0] \$31 ;
-  reg \$32 ;
+  wire \$26 ;
+  wire \$27 ;
+  wire \$28 ;
+  wire \$29 ;
+  wire [8:0] \$3 ;
+  wire \$30 ;
+  wire \$31 ;
+  wire \$32 ;
   reg \$33 ;
-  reg \$34 ;
+  reg [7:0] \$34 ;
   reg \$35 ;
-  reg [16:0] \$36 ;
-  reg [15:0] \$37 ;
-  reg [15:0] \$38 ;
-  reg [19:0] \$39 ;
+  reg [5:0] \$36 ;
+  reg [31:0] \$37 ;
+  reg [31:0] \$38 ;
+  reg [14:0] \$39 ;
   wire \$4 ;
-  reg [1:0] \$40 ;
+  reg [11:0] \$40 ;
   reg \$41 ;
-  reg [31:0] \$42 ;
-  reg [31:0] \$43 ;
+  reg \$42 ;
+  reg \$43 ;
   reg \$44 ;
-  wire [7:0] \$45 ;
-  wire [7:0] \$46 ;
-  wire [7:0] \$47 ;
-  wire [7:0] \$48 ;
+  reg [16:0] \$45 ;
+  reg [15:0] \$46 ;
+  reg [15:0] \$47 ;
+  reg [19:0] \$48 ;
+  reg [1:0] \$49 ;
   wire \$5 ;
-  wire [31:0] \$6 ;
+  reg \$50 ;
+  reg [31:0] \$51 ;
+  reg [31:0] \$52 ;
+  reg \$53 ;
+  wire [7:0] \$54 ;
+  wire [7:0] \$55 ;
+  wire [7:0] \$56 ;
+  wire [7:0] \$57 ;
+  wire \$6 ;
   wire \$7 ;
   wire \$8 ;
   wire \$9 ;
   reg [19:0] a14 = 20'h00000;
+  wire axi_err;
   wire busy;
-  wire \busy$84 ;
-  wire \busy$85 ;
+  wire \busy$87 ;
+  wire \busy$88 ;
+  reg busy_q = 1'h0;
   reg [15:0] c14 = 16'h0000;
   reg cells = 1'h0;
   input clk;
@@ -81,6 +92,7 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   wire dec_start;
   wire [31:0] dec_wdata;
   wire [3:0] dec_we;
+  reg [7:0] done_count = 8'h00;
   reg first = 1'h1;
   reg [1:0] fsm_state = 2'h0;
   reg go;
@@ -163,13 +175,13 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   wire m_axi_wvalid;
   reg [5:0] max_iter = 6'h32;
   (* init = 6'h32 *)
-  wire [5:0] \max_iter$83 ;
+  wire [5:0] \max_iter$86 ;
   reg [31:0] out_addr = 32'd0;
   reg [11:0] out_words = 12'h000;
   reg qam16 = 1'h0;
   reg rate = 1'h0;
   (* init = 1'h0 *)
-  wire \rate$82 ;
+  wire \rate$85 ;
   reg rd_reg = 1'h0;
   reg [31:0] rd_regval = 32'd0;
   reg [31:0] rdata = 32'd0;
@@ -216,75 +228,86 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   wire s_axi_wvalid;
   reg start;
   always @(posedge clk)
-    c14 <= \$37 ;
+    max_iter <= \$36 ;
   always @(posedge clk)
-    s14 <= \$38 ;
+    in_addr <= \$37 ;
   always @(posedge clk)
-    a14 <= \$39 ;
+    out_addr <= \$38 ;
   always @(posedge clk)
-    fsm_state <= \$40 ;
+    in_words <= \$39 ;
   always @(posedge clk)
-    rd_reg <= \$41 ;
+    out_words <= \$40 ;
   always @(posedge clk)
-    rd_regval <= \$42 ;
+    cells <= \$41 ;
   always @(posedge clk)
-    rdata <= \$43 ;
+    rot <= \$42 ;
   always @(posedge clk)
-    first <= \$44 ;
-  assign \$1  = s_axi_awvalid & s_axi_wvalid;
-  assign \$2  = s_axi_awaddr[15:8] == 8'hff;
-  assign \$3  = ~ busy;
-  assign \$4  = ! s_axi_awaddr[7:0];
-  assign \$5  = s_axi_araddr[15:8] == 8'hff;
-  assign \$6  = rd_reg ? rd_regval : { \$48 , \$47 , \$46 , \$45  };
-  assign \$7  = ~ first;
-  assign \$8  = \$7  & s_axi_rready;
-  assign busy = \busy$84  | \busy$85 ;
-  assign \$9  = s_axi_awvalid & s_axi_wvalid;
-  assign \$10  = s_axi_awaddr[15:8] == 8'hff;
-  assign \$11  = ~ busy;
-  assign \$12  = ! s_axi_awaddr[7:0];
-  assign \$13  = ~ busy;
-  assign \$14  = s_axi_wdata[0] & \$13 ;
-  assign \$15  = ~ s_axi_wdata[2];
-  assign \$16  = \$14  & \$15 ;
-  assign \$17  = ~ busy;
-  assign \$18  = s_axi_wdata[0] & \$17 ;
-  assign \$19  = \$18  & s_axi_wdata[2];
-  assign \$20  = s_axi_araddr[15:8] == 8'hff;
-  assign \$21  = ~ \$20 ;
-  assign \$22  = ~ first;
-  assign \$23  = ! fsm_state;
-  assign \$24  = fsm_state == 1'h1;
-  assign \$25  = fsm_state == 2'h2;
+    load_only <= \$43 ;
+  always @(posedge clk)
+    qam16 <= \$44 ;
+  always @(posedge clk)
+    kq <= \$45 ;
+  always @(posedge clk)
+    c14 <= \$46 ;
+  always @(posedge clk)
+    s14 <= \$47 ;
+  always @(posedge clk)
+    a14 <= \$48 ;
+  always @(posedge clk)
+    fsm_state <= \$49 ;
+  always @(posedge clk)
+    rd_reg <= \$50 ;
+  always @(posedge clk)
+    rd_regval <= \$51 ;
+  always @(posedge clk)
+    rdata <= \$52 ;
+  always @(posedge clk)
+    first <= \$53 ;
+  assign \$1  = ~ busy;
+  assign \$2  = busy_q & \$1 ;
+  assign \$3  = done_count + 1'h1;
+  assign \$4  = s_axi_awvalid & s_axi_wvalid;
+  assign \$5  = s_axi_awaddr[15:8] == 8'hff;
+  assign \$6  = ~ busy;
+  assign \$7  = \$5  & \$6 ;
+  assign \$8  = ~ busy;
+  assign \$9  = ! s_axi_awaddr[7:0];
+  assign \$10  = s_axi_araddr[15:8] == 8'hff;
+  assign \$11  = rd_reg ? rd_regval : { \$57 , \$56 , \$55 , \$54  };
+  assign \$12  = ~ first;
+  assign \$13  = \$12  & s_axi_rready;
+  assign busy = \busy$87  | \busy$88 ;
+  assign \$14  = s_axi_awvalid & s_axi_wvalid;
+  assign \$15  = s_axi_awaddr[15:8] == 8'hff;
+  assign \$16  = ~ busy;
+  assign \$17  = \$15  & \$16 ;
+  assign \$18  = ~ busy;
+  assign \$19  = ! s_axi_awaddr[7:0];
+  assign \$20  = ~ busy;
+  assign \$21  = s_axi_wdata[0] & \$20 ;
+  assign \$22  = ~ s_axi_wdata[2];
+  assign \$23  = \$21  & \$22 ;
+  assign \$24  = ~ busy;
+  assign \$25  = s_axi_wdata[0] & \$24 ;
+  assign \$26  = \$25  & s_axi_wdata[2];
+  assign \$27  = s_axi_araddr[15:8] == 8'hff;
+  assign \$28  = ~ \$27 ;
+  assign \$29  = ~ first;
+  assign \$30  = ! fsm_state;
+  assign \$31  = fsm_state == 1'h1;
+  assign \$32  = fsm_state == 2'h2;
   always @(posedge clk)
     rst_q <= { rst_q[0], rst };
   always @(posedge clk)
     rst_dec <= rst_q[1];
   always @(posedge clk)
-    rate <= \$26 ;
+    busy_q <= \$33 ;
   always @(posedge clk)
-    max_iter <= \$27 ;
+    done_count <= \$34 ;
   always @(posedge clk)
-    in_addr <= \$28 ;
-  always @(posedge clk)
-    out_addr <= \$29 ;
-  always @(posedge clk)
-    in_words <= \$30 ;
-  always @(posedge clk)
-    out_words <= \$31 ;
-  always @(posedge clk)
-    cells <= \$32 ;
-  always @(posedge clk)
-    rot <= \$33 ;
-  always @(posedge clk)
-    load_only <= \$34 ;
-  always @(posedge clk)
-    qam16 <= \$35 ;
-  always @(posedge clk)
-    kq <= \$36 ;
+    rate <= \$35 ;
   \ldpc_axi.dec  dec (
-    .busy(\busy$84 ),
+    .busy(\busy$87 ),
     .converged(converged),
     .cpu_addr(cpu_addr),
     .cpu_wdata(cpu_wdata),
@@ -293,21 +316,22 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     .dec_rst(rst_dec),
     .iterations(iterations),
     .max_iter(max_iter),
-    .\port$891$0 (\$45 ),
-    .\port$897$0 (\$46 ),
-    .\port$903$0 (\$47 ),
-    .\port$909$0 (\$48 ),
+    .\port$901$0 (\$54 ),
+    .\port$907$0 (\$55 ),
+    .\port$913$0 (\$56 ),
+    .\port$919$0 (\$57 ),
     .rate(rate),
     .start(start)
   );
   \ldpc_axi.dma  dma (
     .a14(a14),
     .ar_pending(m_axi_arvalid),
-    .busy(\busy$85 ),
+    .axi_err(axi_err),
+    .busy(\busy$88 ),
     .c14(c14),
     .cells(cells),
     .dec_addr(dec_addr),
-    .dec_busy(\busy$84 ),
+    .dec_busy(\busy$87 ),
     .dec_clk(clk),
     .dec_rate(rate),
     .dec_re(dec_re),
@@ -325,18 +349,20 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     .m_axi_awaddr(m_axi_awaddr),
     .m_axi_awready(m_axi_awready),
     .m_axi_awvalid(m_axi_awvalid),
+    .m_axi_bresp(m_axi_bresp),
     .m_axi_bvalid(m_axi_bvalid),
     .m_axi_rready(m_axi_rready),
+    .m_axi_rresp(m_axi_rresp),
     .m_axi_wdata(m_axi_wdata),
     .m_axi_wlast(m_axi_wlast),
     .m_axi_wready(m_axi_wready),
     .m_axi_wvalid(m_axi_wvalid),
     .out_addr(out_addr),
     .out_words(out_words),
-    .\port$891$0 (\$45 ),
-    .\port$897$0 (\$46 ),
-    .\port$903$0 (\$47 ),
-    .\port$909$0 (\$48 ),
+    .\port$901$0 (\$54 ),
+    .\port$907$0 (\$55 ),
+    .\port$913$0 (\$56 ),
+    .\port$919$0 (\$57 ),
     .qam16(qam16),
     .rot(rot),
     .s14(s14),
@@ -345,11 +371,227 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   );
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$38  = s14;
+    \$37  = in_addr;
     casez (fsm_state)
       2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    \$37  = s_axi_wdata;
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$37  = 32'd0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$38  = out_addr;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    \$38  = s_axi_wdata;
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$38  = 32'd0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$39  = in_words;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    \$39  = s_axi_wdata[14:0];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$39  = 15'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$40  = out_words;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    /* empty */;
+                8'h1c:
+                    \$40  = s_axi_wdata[11:0];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$40  = 12'h000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$41  = cells;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    /* empty */;
+                8'h1c:
+                    /* empty */;
+                8'h20:
+                    \$41  = s_axi_wdata[0];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$41  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$42  = rot;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    /* empty */;
+                8'h1c:
+                    /* empty */;
+                8'h20:
+                    \$42  = s_axi_wdata[1];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$42  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$43  = load_only;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    /* empty */;
+                8'h1c:
+                    /* empty */;
+                8'h20:
+                    \$43  = s_axi_wdata[2];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$43  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$44  = qam16;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    /* empty */;
+                8'h1c:
+                    /* empty */;
+                8'h20:
+                    \$44  = s_axi_wdata[3];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$44  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$45  = kq;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    /* empty */;
+                8'h1c:
+                    /* empty */;
+                8'h20:
+                    /* empty */;
+                8'h24:
+                    \$45  = s_axi_wdata[16:0];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$45  = 17'h00000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$46  = c14;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
               casez (s_axi_awaddr[7:0])
                 8'h10:
                     /* empty */;
@@ -364,22 +606,52 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
                 8'h24:
                     /* empty */;
                 8'h28:
-                    \$38  = s_axi_wdata[31:16];
+                    \$46  = s_axi_wdata[15:0];
               endcase
             end
           end
     endcase
     if (rst) begin
-      \$38  = 16'h0000;
+      \$46  = 16'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$39  = a14;
+    \$47  = s14;
     casez (fsm_state)
       2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
+          if (\$4 ) begin
+            if (\$7 ) begin
+              casez (s_axi_awaddr[7:0])
+                8'h10:
+                    /* empty */;
+                8'h14:
+                    /* empty */;
+                8'h18:
+                    /* empty */;
+                8'h1c:
+                    /* empty */;
+                8'h20:
+                    /* empty */;
+                8'h24:
+                    /* empty */;
+                8'h28:
+                    \$47  = s_axi_wdata[31:16];
+              endcase
+            end
+          end
+    endcase
+    if (rst) begin
+      \$47  = 16'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
+    \$48  = a14;
+    casez (fsm_state)
+      2'h0:
+          if (\$4 ) begin
+            if (\$7 ) begin
               casez (s_axi_awaddr[7:0])
                 8'h10:
                     /* empty */;
@@ -396,79 +668,81 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
                 8'h28:
                     /* empty */;
                 8'h2c:
-                    \$39  = s_axi_wdata[19:0];
+                    \$48  = s_axi_wdata[19:0];
               endcase
             end
           end
     endcase
     if (rst) begin
-      \$39  = 20'h00000;
+      \$48  = 20'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$40  = fsm_state;
+    \$49  = fsm_state;
     casez (fsm_state)
       2'h0:
-          if (\$1 ) begin
-            \$40  = 2'h1;
+          if (\$4 ) begin
+            \$49  = 2'h1;
           end else if (s_axi_arvalid) begin
-            \$40  = 2'h2;
+            \$49  = 2'h2;
           end
       2'h1:
           if (s_axi_bready) begin
-            \$40  = 2'h0;
+            \$49  = 2'h0;
           end
       2'h2:
-          if (\$8 ) begin
-            \$40  = 2'h0;
+          if (\$13 ) begin
+            \$49  = 2'h0;
           end
     endcase
     if (rst) begin
-      \$40  = 2'h0;
+      \$49  = 2'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$41  = rd_reg;
+    \$50  = rd_reg;
     casez (fsm_state)
       2'h0:
-          if (\$1 ) begin
+          if (\$4 ) begin
           end else if (s_axi_arvalid) begin
-            \$41  = \$5 ;
+            \$50  = \$10 ;
           end
     endcase
     if (rst) begin
-      \$41  = 1'h0;
+      \$50  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$42  = rd_regval;
+    \$51  = rd_regval;
     casez (fsm_state)
       2'h0:
-          if (\$1 ) begin
+          if (\$4 ) begin
           end else if (s_axi_arvalid) begin
             (* full_case = 32'd1 *)
             casez (s_axi_araddr[7:0])
               8'h00:
-                  \$42  = { 18'h00000, max_iter, 6'h00, rate, 1'h0 };
+                  \$51  = { 18'h00000, max_iter, 6'h00, rate, 1'h0 };
               8'h04:
-                  \$42  = { 18'h00000, iterations, 6'h00, converged, busy };
+                  \$51  = { done_count, 10'h000, iterations, 5'h00, axi_err, converged, busy };
               8'h08:
-                  \$42  = 32'd911230028;
+                  \$51  = 32'd911230028;
+              8'h30:
+                  \$51  = 32'd7;
               default:
-                  \$42  = 32'd0;
+                  \$51  = 32'd0;
             endcase
           end
     endcase
     if (rst) begin
-      \$42  = 32'd0;
+      \$51  = 32'd0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$43  = rdata;
+    \$52  = rdata;
     casez (fsm_state)
       2'h0:
           /* empty */;
@@ -476,16 +750,16 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
           /* empty */;
       2'h2:
           if (first) begin
-            \$43  = \$6 ;
+            \$52  = \$11 ;
           end
     endcase
     if (rst) begin
-      \$43  = 32'd0;
+      \$52  = 32'd0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$44  = first;
+    \$53  = first;
     casez (fsm_state)
       2'h0:
           /* empty */;
@@ -494,15 +768,15 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
       2'h2:
         begin
           if (first) begin
-            \$44  = 1'h0;
+            \$53  = 1'h0;
           end
-          if (\$8 ) begin
-            \$44  = 1'h1;
+          if (\$13 ) begin
+            \$53  = 1'h1;
           end
         end
     endcase
     if (rst) begin
-      \$44  = 1'h1;
+      \$53  = 1'h1;
     end
   end
   always @* begin
@@ -510,7 +784,7 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     s_axi_awready = 1'h0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
+          if (\$14 ) begin
             s_axi_awready = 1'h1;
           end
     endcase
@@ -520,7 +794,7 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     s_axi_wready = 1'h0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
+          if (\$14 ) begin
             s_axi_wready = 1'h1;
           end
     endcase
@@ -530,15 +804,15 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     start = 1'h0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
-            if (\$10 ) begin
-              if (\$12 ) begin
-                start = \$16 ;
+          if (\$14 ) begin
+            if (\$17 ) begin
+              if (\$19 ) begin
+                start = \$23 ;
               end
             end
           end
     endcase
-    if (\busy$85 ) begin
+    if (\busy$88 ) begin
       start = dec_start;
     end
   end
@@ -547,10 +821,10 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     go = 1'h0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
-            if (\$10 ) begin
-              if (\$12 ) begin
-                go = \$19 ;
+          if (\$14 ) begin
+            if (\$17 ) begin
+              if (\$19 ) begin
+                go = \$26 ;
               end
             end
           end
@@ -561,16 +835,16 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     cpu_addr = 14'h0000;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
-            if (\$10 ) begin
-            end else if (\$11 ) begin
+          if (\$14 ) begin
+            if (\$17 ) begin
+            end else if (\$18 ) begin
               cpu_addr = s_axi_awaddr[15:2];
             end
           end else if (s_axi_arvalid) begin
             cpu_addr = s_axi_araddr[15:2];
           end
     endcase
-    if (\busy$85 ) begin
+    if (\busy$88 ) begin
       cpu_addr = dec_addr;
     end
   end
@@ -579,14 +853,14 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     cpu_wdata = 32'd0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
-            if (\$10 ) begin
-            end else if (\$11 ) begin
+          if (\$14 ) begin
+            if (\$17 ) begin
+            end else if (\$18 ) begin
               cpu_wdata = s_axi_wdata;
             end
           end
     endcase
-    if (\busy$85 ) begin
+    if (\busy$88 ) begin
       cpu_wdata = dec_wdata;
     end
   end
@@ -595,14 +869,14 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     cpu_we = 4'h0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
-            if (\$10 ) begin
-            end else if (\$11 ) begin
+          if (\$14 ) begin
+            if (\$17 ) begin
+            end else if (\$18 ) begin
               cpu_we = s_axi_wstrb;
             end
           end
     endcase
-    if (\busy$85 ) begin
+    if (\busy$88 ) begin
       cpu_we = dec_we;
     end
   end
@@ -611,7 +885,7 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     s_axi_arready = 1'h0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
+          if (\$14 ) begin
           end else if (s_axi_arvalid) begin
             s_axi_arready = 1'h1;
           end
@@ -622,12 +896,12 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
     cpu_re = 1'h0;
     casez (fsm_state)
       2'h0:
-          if (\$9 ) begin
+          if (\$14 ) begin
           end else if (s_axi_arvalid) begin
-            cpu_re = \$21 ;
+            cpu_re = \$28 ;
           end
     endcase
-    if (\busy$85 ) begin
+    if (\busy$88 ) begin
       cpu_re = dec_re;
     end
   end
@@ -650,7 +924,7 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
       2'h1:
           /* empty */;
       2'h2:
-          s_axi_rvalid = \$22 ;
+          s_axi_rvalid = \$29 ;
     endcase
   end
   always @* begin
@@ -667,219 +941,31 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$26  = rate;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              if (\$4 ) begin
-                \$26  = s_axi_wdata[1];
-              end
-            end
-          end
-    endcase
-    if (rst) begin
-      \$26  = 1'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$27  = max_iter;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              if (\$4 ) begin
-                \$27  = s_axi_wdata[13:8];
-              end
-            end
-          end
-    endcase
-    if (rst) begin
-      \$27  = 6'h32;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$28  = in_addr;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    \$28  = s_axi_wdata;
-              endcase
-            end
-          end
-    endcase
-    if (rst) begin
-      \$28  = 32'd0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$29  = out_addr;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    \$29  = s_axi_wdata;
-              endcase
-            end
-          end
-    endcase
-    if (rst) begin
-      \$29  = 32'd0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$30  = in_words;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    \$30  = s_axi_wdata[14:0];
-              endcase
-            end
-          end
-    endcase
-    if (rst) begin
-      \$30  = 15'h0000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$31  = out_words;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    /* empty */;
-                8'h1c:
-                    \$31  = s_axi_wdata[11:0];
-              endcase
-            end
-          end
-    endcase
-    if (rst) begin
-      \$31  = 12'h000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$32  = cells;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    /* empty */;
-                8'h1c:
-                    /* empty */;
-                8'h20:
-                    \$32  = s_axi_wdata[0];
-              endcase
-            end
-          end
-    endcase
-    if (rst) begin
-      \$32  = 1'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$33  = rot;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    /* empty */;
-                8'h1c:
-                    /* empty */;
-                8'h20:
-                    \$33  = s_axi_wdata[1];
-              endcase
-            end
-          end
-    endcase
+    \$33  = busy;
     if (rst) begin
       \$33  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$34  = load_only;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    /* empty */;
-                8'h1c:
-                    /* empty */;
-                8'h20:
-                    \$34  = s_axi_wdata[2];
-              endcase
-            end
-          end
-    endcase
+    \$34  = done_count;
+    if (\$2 ) begin
+      \$34  = \$3 [7:0];
+    end
     if (rst) begin
-      \$34  = 1'h0;
+      \$34  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$35  = qam16;
+    \$35  = rate;
     casez (fsm_state)
       2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    /* empty */;
-                8'h1c:
-                    /* empty */;
-                8'h20:
-                    \$35  = s_axi_wdata[3];
-              endcase
+          if (\$4 ) begin
+            if (\$7 ) begin
+              if (\$9 ) begin
+                \$35  = s_axi_wdata[1];
+              end
             end
           end
     endcase
@@ -889,69 +975,28 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$36  = kq;
+    \$36  = max_iter;
     casez (fsm_state)
       2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    /* empty */;
-                8'h1c:
-                    /* empty */;
-                8'h20:
-                    /* empty */;
-                8'h24:
-                    \$36  = s_axi_wdata[16:0];
-              endcase
+          if (\$4 ) begin
+            if (\$7 ) begin
+              if (\$9 ) begin
+                \$36  = s_axi_wdata[13:8];
+              end
             end
           end
     endcase
     if (rst) begin
-      \$36  = 17'h00000;
+      \$36  = 6'h32;
     end
   end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$1 ) begin end
-    \$37  = c14;
-    casez (fsm_state)
-      2'h0:
-          if (\$1 ) begin
-            if (\$2 ) begin
-              casez (s_axi_awaddr[7:0])
-                8'h10:
-                    /* empty */;
-                8'h14:
-                    /* empty */;
-                8'h18:
-                    /* empty */;
-                8'h1c:
-                    /* empty */;
-                8'h20:
-                    /* empty */;
-                8'h24:
-                    /* empty */;
-                8'h28:
-                    \$37  = s_axi_wdata[15:0];
-              endcase
-            end
-          end
-    endcase
-    if (rst) begin
-      \$37  = 16'h0000;
-    end
-  end
-  assign cpu_rdata = { \$48 , \$47 , \$46 , \$45  };
+  assign cpu_rdata = { \$57 , \$56 , \$55 , \$54  };
   assign dec_clk = clk;
   assign dec_rst = rst_dec;
-  assign \rate$82  = rate;
-  assign \max_iter$83  = max_iter;
-  assign dec_rdata = { \$48 , \$47 , \$46 , \$45  };
-  assign dec_busy = \busy$84 ;
+  assign \rate$85  = rate;
+  assign \max_iter$86  = max_iter;
+  assign dec_rdata = { \$57 , \$56 , \$55 , \$54  };
+  assign dec_busy = \busy$87 ;
   assign dec_rate = rate;
   assign s_axi_bresp = 2'h0;
   assign s_axi_rresp = 2'h0;
@@ -975,7 +1020,7 @@ module ldpc_axi(s_axi_awvalid, s_axi_wdata, s_axi_wstrb, s_axi_wvalid, s_axi_bre
 endmodule
 
 (* generator = "Amaranth" *)
-module \ldpc_axi.dec (\port$891$0 , \port$897$0 , \port$903$0 , \port$909$0 , dec_rst, rate, max_iter, start, cpu_addr, cpu_wdata, cpu_we, busy, converged, iterations, dec_clk);
+module \ldpc_axi.dec (\port$901$0 , \port$907$0 , \port$913$0 , \port$919$0 , dec_rst, rate, max_iter, start, cpu_addr, cpu_wdata, cpu_we, busy, converged, iterations, dec_clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$2  = 0;
   reg [2:0] \$1 ;
   wire \$10 ;
@@ -1634,14 +1679,14 @@ module \ldpc_axi.dec (\port$891$0 , \port$897$0 , \port$903$0 , \port$909$0 , de
   wire [9:0] pnew1;
   wire [9:0] pnew2;
   wire [9:0] pnew3;
-  output [7:0] \port$891$0 ;
-  wire [7:0] \port$891$0 ;
-  output [7:0] \port$897$0 ;
-  wire [7:0] \port$897$0 ;
-  output [7:0] \port$903$0 ;
-  wire [7:0] \port$903$0 ;
-  output [7:0] \port$909$0 ;
-  wire [7:0] \port$909$0 ;
+  output [7:0] \port$901$0 ;
+  wire [7:0] \port$901$0 ;
+  output [7:0] \port$907$0 ;
+  wire [7:0] \port$907$0 ;
+  output [7:0] \port$913$0 ;
+  wire [7:0] \port$913$0 ;
+  output [7:0] \port$919$0 ;
+  wire [7:0] \port$919$0 ;
   reg [9:0] pos0;
   reg [9:0] pos1;
   reg [9:0] pos2;
@@ -100738,18 +100783,18 @@ module \ldpc_axi.dec (\port$891$0 , \port$897$0 , \port$903$0 , \port$909$0 , de
   \ldpc_axi.dec.qfifo  qfifo (
     .dec_clk(dec_clk),
     .dec_rst(dec_rst),
-    .\port$1749$0 (s4_e),
-    .\port$1751$0 (s4_act),
-    .\port$1755$0 (s4_rot),
-    .\port$1757$0 (s4_last),
-    .\port$1763$0 (s4_addr0),
-    .\port$1765$0 (s4_addr1),
-    .\port$1767$0 (s4_addr2),
-    .\port$1769$0 (s4_addr3),
-    .\port$466$0 (qv0[7:0]),
-    .\port$509$0 (qv1[7:0]),
-    .\port$552$0 (qv2[7:0]),
-    .\port$595$0 (qv3[7:0]),
+    .\port$1772$0 (s4_e),
+    .\port$1774$0 (s4_act),
+    .\port$1778$0 (s4_rot),
+    .\port$1780$0 (s4_last),
+    .\port$1786$0 (s4_addr0),
+    .\port$1788$0 (s4_addr1),
+    .\port$1790$0 (s4_addr2),
+    .\port$1792$0 (s4_addr3),
+    .\port$476$0 (qv0[7:0]),
+    .\port$519$0 (qv1[7:0]),
+    .\port$562$0 (qv2[7:0]),
+    .\port$605$0 (qv3[7:0]),
     .r_data(r_data),
     .r_en(do2),
     .r_rdy(\r_rdy$194 ),
@@ -103824,10 +103869,10 @@ module \ldpc_axi.dec (\port$891$0 , \port$897$0 , \port$903$0 , \port$909$0 , de
   assign pnew1 = { \$267 [8], \$267  };
   assign pnew2 = { \$281 [8], \$281  };
   assign pnew3 = { \$295 [8], \$295  };
-  assign \port$891$0  = \$signature__data ;
-  assign \port$897$0  = \$signature__data$73 ;
-  assign \port$903$0  = \$signature__data$74 ;
-  assign \port$909$0  = \$signature__data$75 ;
+  assign \port$901$0  = \$signature__data ;
+  assign \port$907$0  = \$signature__data$73 ;
+  assign \port$913$0  = \$signature__data$74 ;
+  assign \port$919$0  = \$signature__data$75 ;
   assign new_par[3] = \$300 ;
   assign new_par[2] = \$286 ;
   assign new_par[1] = \$272 ;
@@ -103845,7 +103890,7 @@ module \ldpc_axi.dec (\port$891$0 , \port$897$0 , \port$903$0 , \port$909$0 , de
 endmodule
 
 (* generator = "Amaranth" *)
-module \ldpc_axi.dec.qfifo (\port$466$0 , \port$509$0 , \port$552$0 , \port$595$0 , r_en, w_level, r_data, dec_rst, w_en, \port$1749$0 , \port$1751$0 , \port$1755$0 , \port$1757$0 , \port$1763$0 , \port$1765$0 , \port$1767$0 , \port$1769$0 , r_rdy, dec_clk);
+module \ldpc_axi.dec.qfifo (\port$476$0 , \port$519$0 , \port$562$0 , \port$605$0 , r_en, w_level, r_data, dec_rst, w_en, \port$1772$0 , \port$1774$0 , \port$1778$0 , \port$1780$0 , \port$1786$0 , \port$1788$0 , \port$1790$0 , \port$1792$0 , r_rdy, dec_clk);
   reg \$auto$verilog_backend.cc:2355:dump_module$3  = 0;
   wire \$1 ;
   wire \$10 ;
@@ -103889,30 +103934,30 @@ module \ldpc_axi.dec.qfifo (\port$466$0 , \port$509$0 , \port$552$0 , \port$595$
   reg [5:0] inner_level = 6'h00;
   wire inner_r_rdy;
   wire [6:0] level;
-  input [3:0] \port$1749$0 ;
-  wire [3:0] \port$1749$0 ;
-  input [3:0] \port$1751$0 ;
-  wire [3:0] \port$1751$0 ;
-  input [1:0] \port$1755$0 ;
-  wire [1:0] \port$1755$0 ;
-  input \port$1757$0 ;
-  wire \port$1757$0 ;
-  input [13:0] \port$1763$0 ;
-  wire [13:0] \port$1763$0 ;
-  input [13:0] \port$1765$0 ;
-  wire [13:0] \port$1765$0 ;
-  input [13:0] \port$1767$0 ;
-  wire [13:0] \port$1767$0 ;
-  input [13:0] \port$1769$0 ;
-  wire [13:0] \port$1769$0 ;
-  input [7:0] \port$466$0 ;
-  wire [7:0] \port$466$0 ;
-  input [7:0] \port$509$0 ;
-  wire [7:0] \port$509$0 ;
-  input [7:0] \port$552$0 ;
-  wire [7:0] \port$552$0 ;
-  input [7:0] \port$595$0 ;
-  wire [7:0] \port$595$0 ;
+  input [3:0] \port$1772$0 ;
+  wire [3:0] \port$1772$0 ;
+  input [3:0] \port$1774$0 ;
+  wire [3:0] \port$1774$0 ;
+  input [1:0] \port$1778$0 ;
+  wire [1:0] \port$1778$0 ;
+  input \port$1780$0 ;
+  wire \port$1780$0 ;
+  input [13:0] \port$1786$0 ;
+  wire [13:0] \port$1786$0 ;
+  input [13:0] \port$1788$0 ;
+  wire [13:0] \port$1788$0 ;
+  input [13:0] \port$1790$0 ;
+  wire [13:0] \port$1790$0 ;
+  input [13:0] \port$1792$0 ;
+  wire [13:0] \port$1792$0 ;
+  input [7:0] \port$476$0 ;
+  wire [7:0] \port$476$0 ;
+  input [7:0] \port$519$0 ;
+  wire [7:0] \port$519$0 ;
+  input [7:0] \port$562$0 ;
+  wire [7:0] \port$562$0 ;
+  input [7:0] \port$605$0 ;
+  wire [7:0] \port$605$0 ;
   (* init = 6'h00 *)
   wire [5:0] produce;
   output [98:0] r_data;
@@ -104002,7 +104047,7 @@ module \ldpc_axi.dec.qfifo (\port$466$0 , \port$509$0 , \port$552$0 , \port$595$
   end
   always @(posedge dec_clk) begin
     if (w_port__en)
-      storage[w_port__addr] <= { \port$1757$0 , \port$1749$0 , \port$1751$0 , \port$1755$0 , \port$1769$0 , \port$1767$0 , \port$1765$0 , \port$1763$0 , \port$595$0 , \port$552$0 , \port$509$0 , \port$466$0  };
+      storage[w_port__addr] <= { \port$1780$0 , \port$1772$0 , \port$1774$0 , \port$1778$0 , \port$1792$0 , \port$1790$0 , \port$1788$0 , \port$1786$0 , \port$605$0 , \port$562$0 , \port$519$0 , \port$476$0  };
   end
   reg [98:0] _0_;
   always @(posedge dec_clk) begin
@@ -104101,8 +104146,8 @@ module \ldpc_axi.dec.qfifo (\port$466$0 , \port$509$0 , \port$552$0 , \port$595$
   assign level = w_level;
   assign r_level = w_level;
   assign produce = w_port__addr;
-  assign w_port__data = { \port$1757$0 , \port$1749$0 , \port$1751$0 , \port$1755$0 , \port$1769$0 , \port$1767$0 , \port$1765$0 , \port$1763$0 , \port$595$0 , \port$552$0 , \port$509$0 , \port$466$0  };
-  assign w_data = { \port$1757$0 , \port$1749$0 , \port$1751$0 , \port$1755$0 , \port$1769$0 , \port$1767$0 , \port$1765$0 , \port$1763$0 , \port$595$0 , \port$552$0 , \port$509$0 , \port$466$0  };
+  assign w_port__data = { \port$1780$0 , \port$1772$0 , \port$1774$0 , \port$1778$0 , \port$1792$0 , \port$1790$0 , \port$1788$0 , \port$1786$0 , \port$605$0 , \port$562$0 , \port$519$0 , \port$476$0  };
+  assign w_data = { \port$1780$0 , \port$1772$0 , \port$1774$0 , \port$1778$0 , \port$1792$0 , \port$1790$0 , \port$1788$0 , \port$1786$0 , \port$605$0 , \port$562$0 , \port$519$0 , \port$476$0  };
   assign consume = r_port__addr;
   assign r_port__data = r_data;
 endmodule
@@ -104290,186 +104335,187 @@ module \ldpc_axi.dec.rfifo (r_data, dec_rst, r_en, w_port__data, w_en, r_rdy, de
 endmodule
 
 (* generator = "Amaranth" *)
-module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, dec_clk, \port$891$0 , \port$897$0 , \port$903$0 , \port$909$0 , m_axi_awaddr, m_axi_wlast, m_axi_rready, dec_rst, dec_rate, in_addr, out_addr, in_words, out_words, cells, rot
-, load_only, qam16, kq, c14, s14, a14, go, dec_busy, busy, dec_addr, dec_wdata, dec_we, dec_start, dec_re, ar_pending, m_axi_araddr, m_axi_awvalid, m_axi_wdata, m_axi_wvalid, m_axi_awready);
+module \ldpc_axi.dma (m_axi_wready, m_axi_bresp, m_axi_bvalid, m_axi_arready, w_data, m_axi_rresp, w_en, dec_clk, \port$901$0 , \port$907$0 , \port$913$0 , \port$919$0 , m_axi_awaddr, m_axi_wlast, m_axi_rready, dec_rst, dec_rate, in_addr, out_addr, in_words, out_words
+, cells, rot, load_only, qam16, kq, c14, s14, a14, go, dec_busy, busy, dec_addr, dec_wdata, dec_we, dec_start, dec_re, ar_pending, m_axi_araddr, axi_err, m_axi_awvalid, m_axi_wdata
+, m_axi_wvalid, m_axi_awready);
   reg \$auto$verilog_backend.cc:2355:dump_module$5  = 0;
   wire [8:0] \$1 ;
   wire [15:0] \$10 ;
-  wire [26:0] \$100 ;
-  wire [44:0] \$101 ;
-  wire [45:0] \$102 ;
+  wire [23:0] \$100 ;
+  wire [23:0] \$101 ;
+  wire [24:0] \$102 ;
   wire \$103 ;
-  wire \$104 ;
-  wire [22:0] \$105 ;
-  wire [22:0] \$106 ;
-  wire [15:0] \$107 ;
-  wire [15:0] \$108 ;
-  wire [22:0] \$109 ;
+  wire [26:0] \$104 ;
+  wire [26:0] \$105 ;
+  wire [26:0] \$106 ;
+  wire [44:0] \$107 ;
+  wire [45:0] \$108 ;
+  wire \$109 ;
   wire [16:0] \$11 ;
   wire \$110 ;
-  wire \$111 ;
-  wire \$112 ;
-  wire \$113 ;
-  wire [12:0] \$114 ;
-  wire \$115 ;
+  wire [22:0] \$111 ;
+  wire [22:0] \$112 ;
+  wire [15:0] \$113 ;
+  wire [15:0] \$114 ;
+  wire [22:0] \$115 ;
   wire \$116 ;
   wire \$117 ;
-  wire [14:0] \$118 ;
+  wire \$118 ;
   wire \$119 ;
   wire [2:0] \$12 ;
-  wire \$120 ;
+  wire [12:0] \$120 ;
   wire \$121 ;
-  wire [14:0] \$122 ;
+  wire \$122 ;
   wire \$123 ;
-  wire \$124 ;
+  wire [14:0] \$124 ;
   wire \$125 ;
-  wire [15:0] \$126 ;
-  wire [4:0] \$127 ;
-  wire [10:0] \$128 ;
-  wire [7:0] \$129 ;
+  wire \$126 ;
+  wire \$127 ;
+  wire [14:0] \$128 ;
+  wire \$129 ;
   wire \$13 ;
-  wire [15:0] \$130 ;
-  wire [5:0] \$131 ;
-  wire [11:0] \$132 ;
-  wire [8:0] \$133 ;
-  wire [15:0] \$134 ;
-  wire [6:0] \$135 ;
-  wire [12:0] \$136 ;
-  wire [7:0] \$137 ;
-  wire [15:0] \$138 ;
-  wire [6:0] \$139 ;
+  wire \$130 ;
+  wire \$131 ;
+  wire [15:0] \$132 ;
+  wire [4:0] \$133 ;
+  wire [10:0] \$134 ;
+  wire [7:0] \$135 ;
+  wire [15:0] \$136 ;
+  wire [5:0] \$137 ;
+  wire [11:0] \$138 ;
+  wire [8:0] \$139 ;
   wire [15:0] \$14 ;
-  wire [12:0] \$140 ;
-  wire [8:0] \$141 ;
-  wire [16:0] \$142 ;
-  wire \$143 ;
-  wire [17:0] \$144 ;
-  wire [2:0] \$145 ;
-  wire \$146 ;
-  wire [7:0] \$147 ;
-  wire \$148 ;
-  wire [11:0] \$149 ;
+  wire [15:0] \$140 ;
+  wire [6:0] \$141 ;
+  wire [12:0] \$142 ;
+  wire [7:0] \$143 ;
+  wire [15:0] \$144 ;
+  wire [6:0] \$145 ;
+  wire [12:0] \$146 ;
+  wire [8:0] \$147 ;
+  wire [16:0] \$148 ;
+  wire \$149 ;
   wire [16:0] \$15 ;
-  wire [7:0] \$150 ;
-  wire [14:0] \$151 ;
+  wire [17:0] \$150 ;
+  wire [2:0] \$151 ;
   wire \$152 ;
-  wire \$153 ;
+  wire [7:0] \$153 ;
   wire \$154 ;
-  wire \$155 ;
-  wire \$156 ;
-  wire \$157 ;
+  wire [11:0] \$155 ;
+  wire [7:0] \$156 ;
+  wire [14:0] \$157 ;
   wire \$158 ;
   wire \$159 ;
   wire \$16 ;
-  wire [13:0] \$160 ;
-  wire [17:0] \$161 ;
+  wire \$160 ;
+  wire \$161 ;
   wire \$162 ;
   wire \$163 ;
-  wire [8:0] \$164 ;
-  wire [14:0] \$165 ;
-  wire [9:0] \$166 ;
-  wire \$167 ;
-  wire [12:0] \$168 ;
+  wire \$164 ;
+  wire \$165 ;
+  wire [13:0] \$166 ;
+  wire [17:0] \$167 ;
+  wire \$168 ;
   wire \$169 ;
   wire [15:0] \$17 ;
-  wire \$170 ;
-  wire \$171 ;
-  wire [13:0] \$172 ;
-  wire [17:0] \$173 ;
-  wire \$174 ;
+  wire [8:0] \$170 ;
+  wire [14:0] \$171 ;
+  wire [9:0] \$172 ;
+  wire \$173 ;
+  wire [12:0] \$174 ;
   wire \$175 ;
-  wire [8:0] \$176 ;
-  wire [14:0] \$177 ;
-  wire [9:0] \$178 ;
-  wire \$179 ;
+  wire \$176 ;
+  wire \$177 ;
+  wire [13:0] \$178 ;
+  wire [17:0] \$179 ;
   wire [16:0] \$18 ;
-  wire [13:0] \$180 ;
+  wire \$180 ;
   wire \$181 ;
-  wire \$182 ;
-  wire \$183 ;
-  wire [13:0] \$184 ;
-  wire [17:0] \$185 ;
-  wire \$186 ;
+  wire [8:0] \$182 ;
+  wire [14:0] \$183 ;
+  wire [9:0] \$184 ;
+  wire \$185 ;
+  wire [13:0] \$186 ;
   wire \$187 ;
-  wire [8:0] \$188 ;
-  wire [14:0] \$189 ;
+  wire \$188 ;
+  wire \$189 ;
   wire \$19 ;
-  wire [9:0] \$190 ;
-  wire \$191 ;
-  wire [14:0] \$192 ;
+  wire [13:0] \$190 ;
+  wire [17:0] \$191 ;
+  wire \$192 ;
   wire \$193 ;
-  wire \$194 ;
-  wire \$195 ;
-  wire [13:0] \$196 ;
-  wire [17:0] \$197 ;
-  wire \$198 ;
+  wire [8:0] \$194 ;
+  wire [14:0] \$195 ;
+  wire [9:0] \$196 ;
+  wire \$197 ;
+  wire [14:0] \$198 ;
   wire \$199 ;
   wire [9:0] \$2 ;
   wire [15:0] \$20 ;
-  wire [8:0] \$200 ;
-  wire [14:0] \$201 ;
-  wire [9:0] \$202 ;
-  wire \$203 ;
-  wire [14:0] \$204 ;
+  wire \$200 ;
+  wire \$201 ;
+  wire [13:0] \$202 ;
+  wire [17:0] \$203 ;
+  wire \$204 ;
   wire \$205 ;
-  wire \$206 ;
-  wire \$207 ;
-  wire [13:0] \$208 ;
-  wire [17:0] \$209 ;
+  wire [8:0] \$206 ;
+  wire [14:0] \$207 ;
+  wire [9:0] \$208 ;
+  wire \$209 ;
   wire [16:0] \$21 ;
-  wire \$210 ;
+  wire [14:0] \$210 ;
   wire \$211 ;
-  wire [8:0] \$212 ;
-  wire [14:0] \$213 ;
-  wire [9:0] \$214 ;
-  wire \$215 ;
-  wire [15:0] \$216 ;
-  wire [4:0] \$217 ;
-  wire [10:0] \$218 ;
-  wire [7:0] \$219 ;
+  wire \$212 ;
+  wire \$213 ;
+  wire [13:0] \$214 ;
+  wire [17:0] \$215 ;
+  wire \$216 ;
+  wire \$217 ;
+  wire [8:0] \$218 ;
+  wire [14:0] \$219 ;
   wire \$22 ;
-  wire [13:0] \$220 ;
-  wire [17:0] \$221 ;
-  wire \$222 ;
-  wire \$223 ;
-  wire [8:0] \$224 ;
-  wire [14:0] \$225 ;
-  wire [9:0] \$226 ;
-  wire \$227 ;
-  wire [15:0] \$228 ;
-  wire [5:0] \$229 ;
+  wire [9:0] \$220 ;
+  wire \$221 ;
+  wire [15:0] \$222 ;
+  wire [4:0] \$223 ;
+  wire [10:0] \$224 ;
+  wire [7:0] \$225 ;
+  wire [13:0] \$226 ;
+  wire [17:0] \$227 ;
+  wire \$228 ;
+  wire \$229 ;
   wire [15:0] \$23 ;
-  wire [11:0] \$230 ;
-  wire \$231 ;
-  wire [13:0] \$232 ;
-  wire [17:0] \$233 ;
-  wire \$234 ;
-  wire \$235 ;
-  wire [8:0] \$236 ;
-  wire [14:0] \$237 ;
-  wire [9:0] \$238 ;
-  wire \$239 ;
+  wire [8:0] \$230 ;
+  wire [14:0] \$231 ;
+  wire [9:0] \$232 ;
+  wire \$233 ;
+  wire [15:0] \$234 ;
+  wire [5:0] \$235 ;
+  wire [11:0] \$236 ;
+  wire \$237 ;
+  wire [13:0] \$238 ;
+  wire [17:0] \$239 ;
   wire [16:0] \$24 ;
-  wire [15:0] \$240 ;
-  wire [6:0] \$241 ;
-  wire [12:0] \$242 ;
-  wire [7:0] \$243 ;
-  wire [13:0] \$244 ;
-  wire [17:0] \$245 ;
-  wire \$246 ;
-  wire \$247 ;
-  wire [8:0] \$248 ;
-  wire [14:0] \$249 ;
+  wire \$240 ;
+  wire \$241 ;
+  wire [8:0] \$242 ;
+  wire [14:0] \$243 ;
+  wire [9:0] \$244 ;
+  wire \$245 ;
+  wire [15:0] \$246 ;
+  wire [6:0] \$247 ;
+  wire [12:0] \$248 ;
+  wire [7:0] \$249 ;
   wire \$25 ;
-  wire [9:0] \$250 ;
-  wire [16:0] \$251 ;
-  wire [16:0] \$252 ;
+  wire [13:0] \$250 ;
+  wire [17:0] \$251 ;
+  wire \$252 ;
   wire \$253 ;
-  wire \$254 ;
-  wire \$255 ;
-  wire \$256 ;
-  wire \$257 ;
-  wire \$258 ;
+  wire [8:0] \$254 ;
+  wire [14:0] \$255 ;
+  wire [9:0] \$256 ;
+  wire [16:0] \$257 ;
+  wire [16:0] \$258 ;
   wire \$259 ;
   wire [15:0] \$26 ;
   wire \$260 ;
@@ -104479,151 +104525,158 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   wire \$264 ;
   wire \$265 ;
   wire \$266 ;
-  wire [15:0] \$267 ;
+  wire \$267 ;
   wire \$268 ;
   wire \$269 ;
   wire [16:0] \$27 ;
   wire \$270 ;
   wire \$271 ;
   wire \$272 ;
-  wire \$273 ;
+  wire [15:0] \$273 ;
   wire \$274 ;
   wire \$275 ;
   wire \$276 ;
   wire \$277 ;
   wire \$278 ;
-  wire [15:0] \$279 ;
+  wire \$279 ;
   wire \$28 ;
   wire \$280 ;
-  wire [31:0] \$281 ;
+  wire \$281 ;
   wire \$282 ;
-  wire [12:0] \$283 ;
+  wire \$283 ;
   wire \$284 ;
-  wire \$285 ;
+  wire [15:0] \$285 ;
   wire \$286 ;
-  wire [8:0] \$287 ;
-  wire [9:0] \$288 ;
-  wire \$289 ;
+  wire [31:0] \$287 ;
+  wire \$288 ;
+  wire [12:0] \$289 ;
   wire [15:0] \$29 ;
-  wire [12:0] \$290 ;
-  wire [4:0] \$291 ;
+  wire \$290 ;
+  wire \$291 ;
   wire \$292 ;
-  wire [12:0] \$293 ;
-  wire \$294 ;
+  wire [8:0] \$293 ;
+  wire [9:0] \$294 ;
   wire \$295 ;
-  wire \$296 ;
-  wire \$297 ;
+  wire [12:0] \$296 ;
+  wire [4:0] \$297 ;
   wire \$298 ;
-  reg [7:0] \$299 ;
+  wire [12:0] \$299 ;
   wire \$3 ;
   wire [16:0] \$30 ;
-  reg \$300 ;
-  reg [31:0] \$301 ;
-  reg [13:0] \$302 ;
-  reg [7:0] \$303 ;
-  reg [1:0] \$304 ;
-  reg [25:0] \$305 ;
+  wire \$300 ;
+  wire \$301 ;
+  wire \$302 ;
+  wire \$303 ;
+  wire \$304 ;
+  reg [7:0] \$305 ;
   reg \$306 ;
-  reg [13:0] \$307 ;
-  reg [1:0] \$308 ;
-  reg \$309 ;
+  reg [31:0] \$307 ;
+  reg [13:0] \$308 ;
+  reg [7:0] \$309 ;
   wire \$31 ;
   reg \$310 ;
-  reg [13:0] \$311 ;
-  reg [1:0] \$312 ;
-  reg [26:0] \$313 ;
-  reg \$314 ;
-  reg [39:0] \$315 ;
-  reg [13:0] \$316 ;
-  reg [1:0] \$317 ;
-  reg \$318 ;
-  reg [7:0] \$319 ;
+  reg [1:0] \$311 ;
+  reg [25:0] \$312 ;
+  reg \$313 ;
+  reg [13:0] \$314 ;
+  reg [1:0] \$315 ;
+  reg \$316 ;
+  reg \$317 ;
+  reg [13:0] \$318 ;
+  reg [1:0] \$319 ;
   wire [15:0] \$32 ;
-  reg [13:0] \$320 ;
-  reg [1:0] \$321 ;
-  reg \$322 ;
-  reg [14:0] \$323 ;
-  reg \$324 ;
-  reg [15:0] \$325 ;
-  reg [1:0] \$326 ;
-  reg [16:0] \$327 ;
-  reg [6:0] \$328 ;
-  reg [10:0] \$329 ;
+  reg [26:0] \$320 ;
+  reg \$321 ;
+  reg [39:0] \$322 ;
+  reg [13:0] \$323 ;
+  reg [1:0] \$324 ;
+  reg \$325 ;
+  reg [7:0] \$326 ;
+  reg [13:0] \$327 ;
+  reg [1:0] \$328 ;
+  reg \$329 ;
   wire [16:0] \$33 ;
-  reg [13:0] \$330 ;
-  reg [4:0] \$331 ;
-  reg [12:0] \$332 ;
-  reg [16:0] \$333 ;
-  reg [7:0] \$334 ;
-  reg [13:0] \$335 ;
-  reg [8:0] \$336 ;
-  reg [12:0] \$337 ;
-  reg [16:0] \$338 ;
-  reg [7:0] \$339 ;
+  reg [14:0] \$330 ;
+  reg \$331 ;
+  reg [15:0] \$332 ;
+  reg [1:0] \$333 ;
+  reg [16:0] \$334 ;
+  reg [6:0] \$335 ;
+  reg [10:0] \$336 ;
+  reg [13:0] \$337 ;
+  reg [4:0] \$338 ;
+  reg [12:0] \$339 ;
   wire \$34 ;
-  reg [13:0] \$340 ;
-  reg [8:0] \$341 ;
-  reg [12:0] \$342 ;
-  reg [16:0] \$343 ;
-  reg [7:0] \$344 ;
-  reg [13:0] \$345 ;
-  reg [8:0] \$346 ;
-  reg [12:0] \$347 ;
-  reg [16:0] \$348 ;
-  reg [7:0] \$349 ;
+  reg [16:0] \$340 ;
+  reg [7:0] \$341 ;
+  reg [13:0] \$342 ;
+  reg [8:0] \$343 ;
+  reg [12:0] \$344 ;
+  reg [16:0] \$345 ;
+  reg [7:0] \$346 ;
+  reg [13:0] \$347 ;
+  reg [8:0] \$348 ;
+  reg [12:0] \$349 ;
   wire [15:0] \$35 ;
-  reg [13:0] \$350 ;
-  reg [8:0] \$351 ;
-  reg [12:0] \$352 ;
-  reg [16:0] \$353 ;
-  reg [7:0] \$354 ;
-  reg [13:0] \$355 ;
-  reg [8:0] \$356 ;
-  reg [12:0] \$357 ;
-  reg [16:0] \$358 ;
-  reg [7:0] \$359 ;
+  reg [16:0] \$350 ;
+  reg [7:0] \$351 ;
+  reg [13:0] \$352 ;
+  reg [8:0] \$353 ;
+  reg [12:0] \$354 ;
+  reg [16:0] \$355 ;
+  reg [7:0] \$356 ;
+  reg [13:0] \$357 ;
+  reg [8:0] \$358 ;
+  reg [12:0] \$359 ;
   wire [16:0] \$36 ;
-  reg [13:0] \$360 ;
-  reg [8:0] \$361 ;
-  reg [12:0] \$362 ;
-  reg [16:0] \$363 ;
-  reg [7:0] \$364 ;
-  reg [13:0] \$365 ;
-  reg [8:0] \$366 ;
-  reg [12:0] \$367 ;
-  reg [16:0] \$368 ;
-  reg [7:0] \$369 ;
+  reg [16:0] \$360 ;
+  reg [7:0] \$361 ;
+  reg [13:0] \$362 ;
+  reg [8:0] \$363 ;
+  reg [12:0] \$364 ;
+  reg [16:0] \$365 ;
+  reg [7:0] \$366 ;
+  reg [13:0] \$367 ;
+  reg [8:0] \$368 ;
+  reg [12:0] \$369 ;
   wire \$37 ;
-  reg [13:0] \$370 ;
-  reg [8:0] \$371 ;
-  reg [7:0] \$372 ;
-  reg [7:0] \$373 ;
-  reg [7:0] \$374 ;
-  reg [7:0] \$375 ;
+  reg [16:0] \$370 ;
+  reg [7:0] \$371 ;
+  reg [13:0] \$372 ;
+  reg [8:0] \$373 ;
+  reg [12:0] \$374 ;
+  reg [16:0] \$375 ;
   reg [7:0] \$376 ;
-  reg [7:0] \$377 ;
-  reg [14:0] \$378 ;
-  reg [11:0] \$379 ;
+  reg [13:0] \$377 ;
+  reg [8:0] \$378 ;
+  reg [7:0] \$379 ;
   wire [26:0] \$38 ;
-  reg \$380 ;
-  reg [31:0] \$381 ;
-  reg [14:0] \$382 ;
-  reg [31:0] \$383 ;
-  reg [3:0] \$384 ;
-  reg \$385 ;
-  reg [63:0] \$386 ;
+  reg [7:0] \$380 ;
+  reg [7:0] \$381 ;
+  reg [7:0] \$382 ;
+  reg [7:0] \$383 ;
+  reg [7:0] \$384 ;
+  reg [14:0] \$385 ;
+  reg [11:0] \$386 ;
   reg \$387 ;
+  reg [31:0] \$388 ;
+  reg [14:0] \$389 ;
   wire [26:0] \$39 ;
-  wire [6:0] \$399 ;
+  reg [31:0] \$390 ;
+  reg [3:0] \$391 ;
+  reg \$392 ;
+  reg [63:0] \$393 ;
+  reg \$394 ;
   wire \$4 ;
   wire [39:0] \$40 ;
+  wire [6:0] \$406 ;
   wire \$41 ;
   wire \$42 ;
   wire \$43 ;
   wire [16:0] \$44 ;
   wire \$45 ;
-  wire [6:0] \$453 ;
   wire \$46 ;
+  wire [6:0] \$460 ;
   wire \$47 ;
   wire \$48 ;
   wire \$49 ;
@@ -104667,21 +104720,21 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   wire [14:0] \$83 ;
   wire [14:0] \$84 ;
   wire [8:0] \$85 ;
-  wire [2:0] \$86 ;
+  wire \$86 ;
   wire \$87 ;
   wire \$88 ;
-  wire [7:0] \$89 ;
+  wire \$89 ;
   wire \$9 ;
-  wire [22:0] \$90 ;
-  wire [23:0] \$91 ;
-  wire [23:0] \$92 ;
-  wire [24:0] \$93 ;
-  wire [23:0] \$94 ;
-  wire [23:0] \$95 ;
-  wire [24:0] \$96 ;
-  wire \$97 ;
-  wire [26:0] \$98 ;
-  wire [26:0] \$99 ;
+  wire \$90 ;
+  wire \$91 ;
+  wire [2:0] \$92 ;
+  wire \$93 ;
+  wire \$94 ;
+  wire [7:0] \$95 ;
+  wire [22:0] \$96 ;
+  wire [23:0] \$97 ;
+  wire [23:0] \$98 ;
+  wire [24:0] \$99 ;
   input [19:0] a14;
   wire [19:0] a14;
   reg [7:0] a_i = 8'h00;
@@ -104692,6 +104745,8 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   reg ar_pending = 1'h0;
   (* init = 1'h0 *)
   wire aw_pending;
+  output axi_err;
+  reg axi_err = 1'h0;
   reg [7:0] bursts = 8'h00;
   output busy;
   reg busy;
@@ -104825,11 +104880,15 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   output m_axi_awvalid;
   reg m_axi_awvalid = 1'h0;
   wire m_axi_bready;
+  input [1:0] m_axi_bresp;
+  wire [1:0] m_axi_bresp;
   input m_axi_bvalid;
   wire m_axi_bvalid;
   wire [63:0] m_axi_rdata;
   output m_axi_rready;
   wire m_axi_rready;
+  input [1:0] m_axi_rresp;
+  wire [1:0] m_axi_rresp;
   wire m_axi_rvalid;
   output [63:0] m_axi_wdata;
   reg [63:0] m_axi_wdata = 64'h0000000000000000;
@@ -104859,14 +104918,14 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   reg [7:0] outstanding = 8'h00;
   reg [10:0] pc = 11'h000;
   reg [1:0] ph = 2'h0;
-  input [7:0] \port$891$0 ;
-  wire [7:0] \port$891$0 ;
-  input [7:0] \port$897$0 ;
-  wire [7:0] \port$897$0 ;
-  input [7:0] \port$903$0 ;
-  wire [7:0] \port$903$0 ;
-  input [7:0] \port$909$0 ;
-  wire [7:0] \port$909$0 ;
+  input [7:0] \port$901$0 ;
+  wire [7:0] \port$901$0 ;
+  input [7:0] \port$907$0 ;
+  wire [7:0] \port$907$0 ;
+  input [7:0] \port$913$0 ;
+  wire [7:0] \port$913$0 ;
+  input [7:0] \port$919$0 ;
+  wire [7:0] \port$919$0 ;
   reg [6:0] pr = 7'h00;
   reg [13:0] pr90 = 14'h0000;
   reg [13:0] q_addr;
@@ -105967,8 +106026,8 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   assign got = w_en & m_axi_rready;
   assign \$7  = out_addr + { k, 2'h0 };
   assign m_axi_wlast = nb == 4'hf;
-  assign \$399  = cq * 5'h10;
-  assign \cell  = r_data >> \$399 ;
+  assign \$406  = cq * 5'h10;
+  assign \cell  = r_data >> \$406 ;
   assign \$8  = dec_rate ? 16'hbdd8 : 16'h7e90;
   assign q_c = dec_rate ? 7'h2d : 7'h5a;
   assign \$9  = v < \$8 ;
@@ -106019,10 +106078,10 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   assign \$51  = cell_av & \$50 ;
   assign \$52  = w >= in_words;
   assign \$53  = cell_av & \$52 ;
-  assign \$453  = half * 6'h20;
-  assign \$54  = r_data >> \$453 ;
+  assign \$460  = half * 6'h20;
+  assign \$54  = r_data >> \$460 ;
   assign \$55  = i < total;
-  assign \$56  = { \port$909$0 [7], \port$903$0 [7], \port$897$0 [7], \port$891$0 [7] } << { j, 2'h0 };
+  assign \$56  = { \port$919$0 [7], \port$913$0 [7], \port$907$0 [7], \port$901$0 [7] } << { j, 2'h0 };
   assign \$57  = { 3'h0, acc } | \$56 ;
   assign \$58  = j == 3'h7;
   assign \$59  = 1'h1 << s3_byte;
@@ -106052,347 +106111,355 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   assign \$83  = r_left - 5'h10;
   assign \$84  = \$82  ? \$83  : 15'h0000;
   assign \$85  = bursts - 1'h1;
-  assign \$86  = cq + 1'h1;
-  assign \$87  = ~ rot;
-  assign \$88  = ~ ph[0];
-  assign \$89  = ph[0] ? a_q : a_i;
-  assign \$90  = $signed(\$89 ) * $signed(16'h4000);
-  assign \$91  = $signed(a_i) * $signed(c14);
-  assign \$92  = $signed(a_q) * $signed(s14);
-  assign \$93  = $signed(\$91 ) - $signed(\$92 );
-  assign \$94  = $signed(a_i) * $signed(s14);
-  assign \$95  = $signed(a_q) * $signed(c14);
-  assign \$96  = $signed(\$94 ) + $signed(\$95 );
-  assign \$97  = qam16 & ph[1];
-  assign \$98  = \$39 [25:0] - a14;
-  assign \$99  = s1_outer ? \$98  : { s1_z[25], s1_z };
-  assign \$101  = $signed(\$100 ) * $signed({ 1'h0, kq });
-  assign \$102  = $signed(\$101 ) + $signed(18'h10000);
-  assign \$103  = $signed(\$40 [22:0]) > $signed(6'h1f);
-  assign \$104  = $signed(\$40 [22:0]) < $signed(6'h21);
-  assign \$105  = \$104  ? 23'h7fffe1 : \$40 [22:0];
-  assign \$106  = \$103  ? 23'h00001f : \$105 ;
-  assign \$107  = in_words + 5'h1f;
-  assign \$127  = dec_rate ? 5'h00 : 5'h16;
-  assign \$128  = dec_rate ? 11'h000 : 11'h7bc;
-  assign \$129  = dec_rate ? 8'h00 : 8'hb0;
-  assign \$131  = dec_rate ? 6'h00 : 6'h2c;
-  assign \$132  = dec_rate ? 12'h000 : 12'hf78;
-  assign \$133  = dec_rate ? 9'h000 : 9'h163;
-  assign \$135  = dec_rate ? 7'h16 : 7'h43;
-  assign \$136  = dec_rate ? 13'h07bc : 13'h178e;
-  assign \$139  = dec_rate ? 7'h2c : 7'h59;
-  assign \$140  = dec_rate ? 13'h0f78 : 13'h1f4a;
-  assign \$142  = jc + 1'h1;
-  assign \$143  = \$142  == { in_words, 1'h0 };
-  assign \$144  = v + 1'h1;
-  assign \$145  = ph + 1'h1;
-  assign \$146  = v >= \$8 ;
-  assign \$147  = q_c - 1'h1;
-  assign \$148  = pr == \$147 ;
-  assign \$149  = pc + 1'h1;
-  assign \$150  = pr + 1'h1;
-  assign \$151  = pr90 + 7'h5a;
-  assign \$152  = ph == 2'h3;
-  assign \$153  = qam16 & \$152 ;
-  assign \$154  = \$153  & jc[0];
-  assign \$155  = col_i0 == 13'h1fa3;
-  assign \$160  = col_i0 + 1'h1;
-  assign \$161  = col_pos0 + 1'h1;
-  assign \$162  = col_pos0 < \$8 ;
-  assign \$163  = col_s0 == 9'h167;
-  assign \$164  = col_t0 + 1'h1;
-  assign \$165  = col_t900 + 7'h5a;
-  assign \$166  = col_s0 + 1'h1;
-  assign \$167  = col_i1 == 13'h1fa3;
-  assign \$172  = col_i1 + 1'h1;
-  assign \$173  = col_pos1 + 1'h1;
-  assign \$174  = col_pos1 < \$8 ;
-  assign \$175  = col_s1 == 9'h167;
-  assign \$176  = col_t1 + 1'h1;
-  assign \$177  = col_t901 + 7'h5a;
-  assign \$178  = col_s1 + 1'h1;
-  assign \$179  = col_i2 == 13'h1fa3;
-  assign \$184  = col_i2 + 1'h1;
-  assign \$185  = col_pos2 + 1'h1;
-  assign \$186  = col_pos2 < \$8 ;
-  assign \$187  = col_s2 == 9'h167;
-  assign \$188  = col_t2 + 1'h1;
-  assign \$189  = col_t902 + 7'h5a;
-  assign \$190  = col_s2 + 1'h1;
-  assign \$191  = col_i3 == 13'h1fa3;
-  assign \$196  = col_i3 + 1'h1;
-  assign \$197  = col_pos3 + 1'h1;
-  assign \$198  = col_pos3 < \$8 ;
-  assign \$199  = col_s3 == 9'h167;
-  assign \$200  = col_t3 + 1'h1;
-  assign \$201  = col_t903 + 7'h5a;
-  assign \$202  = col_s3 + 1'h1;
-  assign \$203  = col_i4 == 13'h1fa3;
-  assign \$208  = col_i4 + 1'h1;
-  assign \$209  = col_pos4 + 1'h1;
-  assign \$210  = col_pos4 < \$8 ;
-  assign \$211  = col_s4 == 9'h167;
-  assign \$212  = col_t4 + 1'h1;
-  assign \$213  = col_t904 + 7'h5a;
-  assign \$214  = col_s4 + 1'h1;
-  assign \$215  = col_i5 == 13'h1fa3;
-  assign \$217  = dec_rate ? 5'h00 : 5'h16;
-  assign \$218  = dec_rate ? 11'h000 : 11'h7bc;
-  assign \$219  = dec_rate ? 8'h00 : 8'hb4;
-  assign \$220  = col_i5 + 1'h1;
-  assign \$221  = col_pos5 + 1'h1;
-  assign \$222  = col_pos5 < \$8 ;
-  assign \$223  = col_s5 == 9'h167;
-  assign \$224  = col_t5 + 1'h1;
-  assign \$225  = col_t905 + 7'h5a;
-  assign \$226  = col_s5 + 1'h1;
-  assign \$227  = col_i6 == 13'h1fa3;
-  assign \$229  = dec_rate ? 6'h00 : 6'h2d;
-  assign \$230  = dec_rate ? 12'h000 : 12'hfd2;
-  assign \$232  = col_i6 + 1'h1;
-  assign \$233  = col_pos6 + 1'h1;
-  assign \$234  = col_pos6 < \$8 ;
-  assign \$235  = col_s6 == 9'h167;
-  assign \$236  = col_t6 + 1'h1;
-  assign \$237  = col_t906 + 7'h5a;
-  assign \$238  = col_s6 + 1'h1;
-  assign \$239  = col_i7 == 13'h1fa3;
-  assign \$241  = dec_rate ? 7'h16 : 7'h43;
-  assign \$242  = dec_rate ? 13'h07bc : 13'h178e;
-  assign \$244  = col_i7 + 1'h1;
-  assign \$245  = col_pos7 + 1'h1;
-  assign \$246  = col_pos7 < \$8 ;
-  assign \$247  = col_s7 == 9'h167;
-  assign \$248  = col_t7 + 1'h1;
-  assign \$249  = col_t907 + 7'h5a;
-  assign \$250  = col_s7 + 1'h1;
-  assign \$251  = jc + 1'h1;
-  assign \$252  = jc + 1'h1;
-  assign \$253  = \$252  == { in_words, 1'h0 };
-  assign \$254  = ~ llr_pipe;
-  assign \$255  = ! r_left;
-  assign \$256  = \$254  & \$255 ;
-  assign \$257  = ~ ar_pending;
-  assign \$258  = \$256  & \$257 ;
-  assign \$259  = ! outstanding;
-  assign \$260  = \$258  & \$259 ;
-  assign \$261  = ~ cell_av;
+  assign \$86  = w_en & m_axi_rready;
+  assign \$87  = | m_axi_rresp;
+  assign \$88  = \$86  & \$87 ;
+  assign \$89  = | m_axi_bresp;
+  assign \$90  = m_axi_bvalid & \$89 ;
+  assign \$91  = \$88  | \$90 ;
+  assign \$92  = cq + 1'h1;
+  assign \$93  = ~ rot;
+  assign \$94  = ~ ph[0];
+  assign \$95  = ph[0] ? a_q : a_i;
+  assign \$96  = $signed(\$95 ) * $signed(16'h4000);
+  assign \$97  = $signed(a_i) * $signed(c14);
+  assign \$98  = $signed(a_q) * $signed(s14);
+  assign \$99  = $signed(\$97 ) - $signed(\$98 );
+  assign \$100  = $signed(a_i) * $signed(s14);
+  assign \$101  = $signed(a_q) * $signed(c14);
+  assign \$102  = $signed(\$100 ) + $signed(\$101 );
+  assign \$103  = qam16 & ph[1];
+  assign \$104  = \$39 [25:0] - a14;
+  assign \$105  = s1_outer ? \$104  : { s1_z[25], s1_z };
+  assign \$107  = $signed(\$106 ) * $signed({ 1'h0, kq });
+  assign \$108  = $signed(\$107 ) + $signed(18'h10000);
+  assign \$109  = $signed(\$40 [22:0]) > $signed(6'h1f);
+  assign \$110  = $signed(\$40 [22:0]) < $signed(6'h21);
+  assign \$111  = \$110  ? 23'h7fffe1 : \$40 [22:0];
+  assign \$112  = \$109  ? 23'h00001f : \$111 ;
+  assign \$113  = in_words + 5'h1f;
+  assign \$133  = dec_rate ? 5'h00 : 5'h16;
+  assign \$134  = dec_rate ? 11'h000 : 11'h7bc;
+  assign \$135  = dec_rate ? 8'h00 : 8'hb0;
+  assign \$137  = dec_rate ? 6'h00 : 6'h2c;
+  assign \$138  = dec_rate ? 12'h000 : 12'hf78;
+  assign \$139  = dec_rate ? 9'h000 : 9'h163;
+  assign \$141  = dec_rate ? 7'h16 : 7'h43;
+  assign \$142  = dec_rate ? 13'h07bc : 13'h178e;
+  assign \$145  = dec_rate ? 7'h2c : 7'h59;
+  assign \$146  = dec_rate ? 13'h0f78 : 13'h1f4a;
+  assign \$148  = jc + 1'h1;
+  assign \$149  = \$148  == { in_words, 1'h0 };
+  assign \$150  = v + 1'h1;
+  assign \$151  = ph + 1'h1;
+  assign \$152  = v >= \$8 ;
+  assign \$153  = q_c - 1'h1;
+  assign \$154  = pr == \$153 ;
+  assign \$155  = pc + 1'h1;
+  assign \$156  = pr + 1'h1;
+  assign \$157  = pr90 + 7'h5a;
+  assign \$158  = ph == 2'h3;
+  assign \$159  = qam16 & \$158 ;
+  assign \$160  = \$159  & jc[0];
+  assign \$161  = col_i0 == 13'h1fa3;
+  assign \$166  = col_i0 + 1'h1;
+  assign \$167  = col_pos0 + 1'h1;
+  assign \$168  = col_pos0 < \$8 ;
+  assign \$169  = col_s0 == 9'h167;
+  assign \$170  = col_t0 + 1'h1;
+  assign \$171  = col_t900 + 7'h5a;
+  assign \$172  = col_s0 + 1'h1;
+  assign \$173  = col_i1 == 13'h1fa3;
+  assign \$178  = col_i1 + 1'h1;
+  assign \$179  = col_pos1 + 1'h1;
+  assign \$180  = col_pos1 < \$8 ;
+  assign \$181  = col_s1 == 9'h167;
+  assign \$182  = col_t1 + 1'h1;
+  assign \$183  = col_t901 + 7'h5a;
+  assign \$184  = col_s1 + 1'h1;
+  assign \$185  = col_i2 == 13'h1fa3;
+  assign \$190  = col_i2 + 1'h1;
+  assign \$191  = col_pos2 + 1'h1;
+  assign \$192  = col_pos2 < \$8 ;
+  assign \$193  = col_s2 == 9'h167;
+  assign \$194  = col_t2 + 1'h1;
+  assign \$195  = col_t902 + 7'h5a;
+  assign \$196  = col_s2 + 1'h1;
+  assign \$197  = col_i3 == 13'h1fa3;
+  assign \$202  = col_i3 + 1'h1;
+  assign \$203  = col_pos3 + 1'h1;
+  assign \$204  = col_pos3 < \$8 ;
+  assign \$205  = col_s3 == 9'h167;
+  assign \$206  = col_t3 + 1'h1;
+  assign \$207  = col_t903 + 7'h5a;
+  assign \$208  = col_s3 + 1'h1;
+  assign \$209  = col_i4 == 13'h1fa3;
+  assign \$214  = col_i4 + 1'h1;
+  assign \$215  = col_pos4 + 1'h1;
+  assign \$216  = col_pos4 < \$8 ;
+  assign \$217  = col_s4 == 9'h167;
+  assign \$218  = col_t4 + 1'h1;
+  assign \$219  = col_t904 + 7'h5a;
+  assign \$220  = col_s4 + 1'h1;
+  assign \$221  = col_i5 == 13'h1fa3;
+  assign \$223  = dec_rate ? 5'h00 : 5'h16;
+  assign \$224  = dec_rate ? 11'h000 : 11'h7bc;
+  assign \$225  = dec_rate ? 8'h00 : 8'hb4;
+  assign \$226  = col_i5 + 1'h1;
+  assign \$227  = col_pos5 + 1'h1;
+  assign \$228  = col_pos5 < \$8 ;
+  assign \$229  = col_s5 == 9'h167;
+  assign \$230  = col_t5 + 1'h1;
+  assign \$231  = col_t905 + 7'h5a;
+  assign \$232  = col_s5 + 1'h1;
+  assign \$233  = col_i6 == 13'h1fa3;
+  assign \$235  = dec_rate ? 6'h00 : 6'h2d;
+  assign \$236  = dec_rate ? 12'h000 : 12'hfd2;
+  assign \$238  = col_i6 + 1'h1;
+  assign \$239  = col_pos6 + 1'h1;
+  assign \$240  = col_pos6 < \$8 ;
+  assign \$241  = col_s6 == 9'h167;
+  assign \$242  = col_t6 + 1'h1;
+  assign \$243  = col_t906 + 7'h5a;
+  assign \$244  = col_s6 + 1'h1;
+  assign \$245  = col_i7 == 13'h1fa3;
+  assign \$247  = dec_rate ? 7'h16 : 7'h43;
+  assign \$248  = dec_rate ? 13'h07bc : 13'h178e;
+  assign \$250  = col_i7 + 1'h1;
+  assign \$251  = col_pos7 + 1'h1;
+  assign \$252  = col_pos7 < \$8 ;
+  assign \$253  = col_s7 == 9'h167;
+  assign \$254  = col_t7 + 1'h1;
+  assign \$255  = col_t907 + 7'h5a;
+  assign \$256  = col_s7 + 1'h1;
+  assign \$257  = jc + 1'h1;
+  assign \$258  = jc + 1'h1;
+  assign \$259  = \$258  == { in_words, 1'h0 };
+  assign \$260  = ~ llr_pipe;
+  assign \$261  = ! r_left;
   assign \$262  = \$260  & \$261 ;
-  assign \$263  = w < in_words;
-  assign \$264  = cell_av & \$263 ;
-  assign \$265  = w >= in_words;
-  assign \$266  = cell_av & \$265 ;
-  assign \$267  = w + 1'h1;
-  assign \$268  = ~ half;
-  assign \$269  = w >= in_words;
-  assign \$270  = ! r_left;
-  assign \$271  = \$269  & \$270 ;
-  assign \$272  = ~ ar_pending;
-  assign \$273  = \$271  & \$272 ;
-  assign \$274  = ! outstanding;
-  assign \$275  = \$273  & \$274 ;
-  assign \$276  = ~ cell_av;
+  assign \$263  = ~ ar_pending;
+  assign \$264  = \$262  & \$263 ;
+  assign \$265  = ! outstanding;
+  assign \$266  = \$264  & \$265 ;
+  assign \$267  = ~ cell_av;
+  assign \$268  = \$266  & \$267 ;
+  assign \$269  = w < in_words;
+  assign \$270  = cell_av & \$269 ;
+  assign \$271  = w >= in_words;
+  assign \$272  = cell_av & \$271 ;
+  assign \$273  = w + 1'h1;
+  assign \$274  = ~ half;
+  assign \$275  = w >= in_words;
+  assign \$276  = ! r_left;
   assign \$277  = \$275  & \$276 ;
-  assign \$278  = ~ dec_busy;
-  assign \$279  = i + 1'h1;
-  assign \$280  = j == 3'h7;
-  assign \$281  = \$280  ? 32'd0 : nacc;
-  assign \$282  = j == 3'h7;
-  assign \$283  = k + 1'h1;
-  assign \$284  = ~ issuing;
-  assign \$285  = ~ rd_ok;
-  assign \$286  = \$284  & \$285 ;
-  assign \$287  = bursts + 1'h1;
-  assign \$288  = \$287  - m_axi_bvalid;
-  assign \$289  = m_axi_wvalid & m_axi_wready;
-  assign \$290  = k + 2'h2;
-  assign \$291  = nb + 1'h1;
-  assign \$292  = nb == 4'hf;
-  assign \$293  = k + 2'h2;
-  assign \$294  = \$293  >= out_words;
-  assign \$295  = ! bursts;
-  assign \$296  = bursts == 1'h1;
-  assign \$297  = \$296  & m_axi_bvalid;
-  assign \$298  = \$295  | \$297 ;
+  assign \$278  = ~ ar_pending;
+  assign \$279  = \$277  & \$278 ;
+  assign \$280  = ! outstanding;
+  assign \$281  = \$279  & \$280 ;
+  assign \$282  = ~ cell_av;
+  assign \$283  = \$281  & \$282 ;
+  assign \$284  = ~ dec_busy;
+  assign \$285  = i + 1'h1;
+  assign \$286  = j == 3'h7;
+  assign \$287  = \$286  ? 32'd0 : nacc;
+  assign \$288  = j == 3'h7;
+  assign \$289  = k + 1'h1;
+  assign \$290  = ~ issuing;
+  assign \$291  = ~ rd_ok;
+  assign \$292  = \$290  & \$291 ;
+  assign \$293  = bursts + 1'h1;
+  assign \$294  = \$293  - m_axi_bvalid;
+  assign \$295  = m_axi_wvalid & m_axi_wready;
+  assign \$296  = k + 2'h2;
+  assign \$297  = nb + 1'h1;
+  assign \$298  = nb == 4'hf;
+  assign \$299  = k + 2'h2;
+  assign \$300  = \$299  >= out_words;
+  assign \$301  = ! bursts;
+  assign \$302  = bursts == 1'h1;
+  assign \$303  = \$302  & m_axi_bvalid;
+  assign \$304  = \$301  | \$303 ;
   always @(posedge dec_clk)
-    outstanding <= \$299 ;
+    outstanding <= \$305 ;
   always @(posedge dec_clk)
-    ar_pending <= \$300 ;
+    ar_pending <= \$306 ;
   always @(posedge dec_clk)
-    m_axi_araddr <= \$301 ;
+    m_axi_araddr <= \$307 ;
   always @(posedge dec_clk)
-    r_left <= \$302 ;
+    r_left <= \$308 ;
   always @(posedge dec_clk)
-    bursts <= \$303 ;
+    bursts <= \$309 ;
   always @(posedge dec_clk)
-    cq <= \$304 ;
+    axi_err <= \$310 ;
   always @(posedge dec_clk)
-    s1_z <= \$305 ;
+    cq <= \$311 ;
   always @(posedge dec_clk)
-    s1 <= \$306 ;
+    s1_z <= \$312 ;
   always @(posedge dec_clk)
-    s1_addr <= \$307 ;
+    s1 <= \$313 ;
   always @(posedge dec_clk)
-    s1_byte <= \$308 ;
+    s1_addr <= \$314 ;
   always @(posedge dec_clk)
-    s1_outer <= \$309 ;
+    s1_byte <= \$315 ;
   always @(posedge dec_clk)
-    s1b <= \$310 ;
+    s1_outer <= \$316 ;
   always @(posedge dec_clk)
-    s1b_addr <= \$311 ;
+    s1b <= \$317 ;
   always @(posedge dec_clk)
-    s1b_byte <= \$312 ;
+    s1b_addr <= \$318 ;
   always @(posedge dec_clk)
-    s1b_z <= \$313 ;
+    s1b_byte <= \$319 ;
   always @(posedge dec_clk)
-    s2 <= \$314 ;
+    s1b_z <= \$320 ;
   always @(posedge dec_clk)
-    s2_y <= \$315 ;
+    s2 <= \$321 ;
   always @(posedge dec_clk)
-    s2_addr <= \$316 ;
+    s2_y <= \$322 ;
   always @(posedge dec_clk)
-    s2_byte <= \$317 ;
+    s2_addr <= \$323 ;
   always @(posedge dec_clk)
-    s3 <= \$318 ;
+    s2_byte <= \$324 ;
   always @(posedge dec_clk)
-    s3_q <= \$319 ;
+    s3 <= \$325 ;
   always @(posedge dec_clk)
-    s3_addr <= \$320 ;
+    s3_q <= \$326 ;
   always @(posedge dec_clk)
-    s3_byte <= \$321 ;
+    s3_addr <= \$327 ;
   always @(posedge dec_clk)
-    loading <= \$322 ;
+    s3_byte <= \$328 ;
   always @(posedge dec_clk)
-    w <= \$323 ;
+    loading <= \$329 ;
   always @(posedge dec_clk)
-    half <= \$324 ;
+    w <= \$330 ;
   always @(posedge dec_clk)
-    jc <= \$325 ;
+    half <= \$331 ;
   always @(posedge dec_clk)
-    ph <= \$326 ;
+    jc <= \$332 ;
   always @(posedge dec_clk)
-    v <= \$327 ;
+    ph <= \$333 ;
   always @(posedge dec_clk)
-    pr <= \$328 ;
+    v <= \$334 ;
   always @(posedge dec_clk)
-    pc <= \$329 ;
+    pr <= \$335 ;
   always @(posedge dec_clk)
-    pr90 <= \$330 ;
+    pc <= \$336 ;
   always @(posedge dec_clk)
-    fsm_state <= \$331 ;
+    pr90 <= \$337 ;
   always @(posedge dec_clk)
-    col_i0 <= \$332 ;
+    fsm_state <= \$338 ;
   always @(posedge dec_clk)
-    col_pos0 <= \$333 ;
+    col_i0 <= \$339 ;
   always @(posedge dec_clk)
-    col_t0 <= \$334 ;
+    col_pos0 <= \$340 ;
   always @(posedge dec_clk)
-    col_t900 <= \$335 ;
+    col_t0 <= \$341 ;
   always @(posedge dec_clk)
-    col_s0 <= \$336 ;
+    col_t900 <= \$342 ;
   always @(posedge dec_clk)
-    col_i1 <= \$337 ;
+    col_s0 <= \$343 ;
   always @(posedge dec_clk)
-    col_pos1 <= \$338 ;
+    col_i1 <= \$344 ;
   always @(posedge dec_clk)
-    col_t1 <= \$339 ;
+    col_pos1 <= \$345 ;
   always @(posedge dec_clk)
-    col_t901 <= \$340 ;
+    col_t1 <= \$346 ;
   always @(posedge dec_clk)
-    col_s1 <= \$341 ;
+    col_t901 <= \$347 ;
   always @(posedge dec_clk)
-    col_i2 <= \$342 ;
+    col_s1 <= \$348 ;
   always @(posedge dec_clk)
-    col_pos2 <= \$343 ;
+    col_i2 <= \$349 ;
   always @(posedge dec_clk)
-    col_t2 <= \$344 ;
+    col_pos2 <= \$350 ;
   always @(posedge dec_clk)
-    col_t902 <= \$345 ;
+    col_t2 <= \$351 ;
   always @(posedge dec_clk)
-    col_s2 <= \$346 ;
+    col_t902 <= \$352 ;
   always @(posedge dec_clk)
-    col_i3 <= \$347 ;
+    col_s2 <= \$353 ;
   always @(posedge dec_clk)
-    col_pos3 <= \$348 ;
+    col_i3 <= \$354 ;
   always @(posedge dec_clk)
-    col_t3 <= \$349 ;
+    col_pos3 <= \$355 ;
   always @(posedge dec_clk)
-    col_t903 <= \$350 ;
+    col_t3 <= \$356 ;
   always @(posedge dec_clk)
-    col_s3 <= \$351 ;
+    col_t903 <= \$357 ;
   always @(posedge dec_clk)
-    col_i4 <= \$352 ;
+    col_s3 <= \$358 ;
   always @(posedge dec_clk)
-    col_pos4 <= \$353 ;
+    col_i4 <= \$359 ;
   always @(posedge dec_clk)
-    col_t4 <= \$354 ;
+    col_pos4 <= \$360 ;
   always @(posedge dec_clk)
-    col_t904 <= \$355 ;
+    col_t4 <= \$361 ;
   always @(posedge dec_clk)
-    col_s4 <= \$356 ;
+    col_t904 <= \$362 ;
   always @(posedge dec_clk)
-    col_i5 <= \$357 ;
+    col_s4 <= \$363 ;
   always @(posedge dec_clk)
-    col_pos5 <= \$358 ;
+    col_i5 <= \$364 ;
   always @(posedge dec_clk)
-    col_t5 <= \$359 ;
+    col_pos5 <= \$365 ;
   always @(posedge dec_clk)
-    col_t905 <= \$360 ;
+    col_t5 <= \$366 ;
   always @(posedge dec_clk)
-    col_s5 <= \$361 ;
+    col_t905 <= \$367 ;
   always @(posedge dec_clk)
-    col_i6 <= \$362 ;
+    col_s5 <= \$368 ;
   always @(posedge dec_clk)
-    col_pos6 <= \$363 ;
+    col_i6 <= \$369 ;
   always @(posedge dec_clk)
-    col_t6 <= \$364 ;
+    col_pos6 <= \$370 ;
   always @(posedge dec_clk)
-    col_t906 <= \$365 ;
+    col_t6 <= \$371 ;
   always @(posedge dec_clk)
-    col_s6 <= \$366 ;
+    col_t906 <= \$372 ;
   always @(posedge dec_clk)
-    col_i7 <= \$367 ;
+    col_s6 <= \$373 ;
   always @(posedge dec_clk)
-    col_pos7 <= \$368 ;
+    col_i7 <= \$374 ;
   always @(posedge dec_clk)
-    col_t7 <= \$369 ;
+    col_pos7 <= \$375 ;
   always @(posedge dec_clk)
-    col_t907 <= \$370 ;
+    col_t7 <= \$376 ;
   always @(posedge dec_clk)
-    col_s7 <= \$371 ;
+    col_t907 <= \$377 ;
   always @(posedge dec_clk)
-    a_i <= \$372 ;
+    col_s7 <= \$378 ;
   always @(posedge dec_clk)
-    cur_q <= \$373 ;
+    a_i <= \$379 ;
   always @(posedge dec_clk)
-    first_q <= \$374 ;
+    cur_q <= \$380 ;
   always @(posedge dec_clk)
-    nq <= \$375 ;
+    first_q <= \$381 ;
   always @(posedge dec_clk)
-    nxt_i <= \$376 ;
+    nq <= \$382 ;
   always @(posedge dec_clk)
-    nxt_q <= \$377 ;
+    nxt_i <= \$383 ;
   always @(posedge dec_clk)
-    i <= \$378 ;
+    nxt_q <= \$384 ;
   always @(posedge dec_clk)
-    k <= \$379 ;
+    i <= \$385 ;
   always @(posedge dec_clk)
-    rd_ok <= \$380 ;
+    k <= \$386 ;
   always @(posedge dec_clk)
-    acc <= \$381 ;
+    rd_ok <= \$387 ;
   always @(posedge dec_clk)
-    i1 <= \$382 ;
+    acc <= \$388 ;
   always @(posedge dec_clk)
-    lo <= \$383 ;
+    i1 <= \$389 ;
   always @(posedge dec_clk)
-    nb <= \$384 ;
+    lo <= \$390 ;
   always @(posedge dec_clk)
-    m_axi_awvalid <= \$385 ;
+    nb <= \$391 ;
   always @(posedge dec_clk)
-    m_axi_wdata <= \$386 ;
+    m_axi_awvalid <= \$392 ;
   always @(posedge dec_clk)
-    m_axi_wvalid <= \$387 ;
+    m_axi_wdata <= \$393 ;
+  always @(posedge dec_clk)
+    m_axi_wvalid <= \$394 ;
   \ldpc_axi.dma.fifo  fifo (
     .dec_clk(dec_clk),
     .dec_rst(dec_rst),
@@ -107041,61 +107108,61 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$299  = \$79 [7:0];
+    \$305  = \$79 [7:0];
     if (dec_rst) begin
-      \$299  = 8'h00;
+      \$305  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$300  = ar_pending;
+    \$306  = ar_pending;
     if (issue) begin
-      \$300  = 1'h1;
+      \$306  = 1'h1;
     end
     if (\$80 ) begin
-      \$300  = 1'h0;
+      \$306  = 1'h0;
     end
     if (dec_rst) begin
-      \$300  = 1'h0;
+      \$306  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$301  = m_axi_araddr;
+    \$307  = m_axi_araddr;
     if (\$80 ) begin
-      \$301  = \$81 [31:0];
+      \$307  = \$81 [31:0];
     end
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$301  = in_addr;
+            \$307  = in_addr;
           end
     endcase
     if (dec_rst) begin
-      \$301  = 32'd0;
+      \$307  = 32'd0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$302  = r_left;
+    \$308  = r_left;
     if (\$80 ) begin
-      \$302  = \$84 [13:0];
+      \$308  = \$84 [13:0];
     end
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$302  = \$109 [13:0];
+            \$308  = \$115 [13:0];
           end
     endcase
     if (dec_rst) begin
-      \$302  = 14'h0000;
+      \$308  = 14'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$303  = bursts;
+    \$309  = bursts;
     if (m_axi_bvalid) begin
-      \$303  = \$85 [7:0];
+      \$309  = \$85 [7:0];
     end
     casez (fsm_state)
       5'h00:
@@ -107119,169 +107186,181 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h09:
           /* empty */;
       5'h0a:
-          if (\$286 ) begin
-            \$303  = 8'h00;
+          if (\$292 ) begin
+            \$309  = 8'h00;
           end
       5'h0b:
           /* empty */;
       5'h0c:
           if (m_axi_awready) begin
-            \$303  = \$288 [7:0];
+            \$309  = \$294 [7:0];
           end
     endcase
     if (dec_rst) begin
-      \$303  = 8'h00;
+      \$309  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$304  = cq;
-    if (cell_take) begin
-      \$304  = \$86 [1:0];
+    \$310  = axi_err;
+    if (go) begin
+      \$310  = 1'h0;
+    end else if (\$91 ) begin
+      \$310  = 1'h1;
     end
-    casez (fsm_state)
-      5'h00:
-          if (go) begin
-            \$304  = 2'h0;
-          end
-    endcase
-    if (dec_rst) begin
-      \$304  = 2'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    (* full_case = 32'd1 *)
-    if (\$87 ) begin
-      \$305  = { \$90 [22], \$90 [22], \$90 [22], \$90  };
-    end else if (\$88 ) begin
-      \$305  = { \$93 [24], \$93  };
-    end else begin
-      \$305  = { \$96 [24], \$96  };
-    end
-    if (dec_rst) begin
-      \$305  = 26'h0000000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$306  = \issue$115 ;
-    if (dec_rst) begin
-      \$306  = 1'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$307  = tgt_addr;
-    if (dec_rst) begin
-      \$307  = 14'h0000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$308  = tgt_byte;
-    if (dec_rst) begin
-      \$308  = 2'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$309  = \$97 ;
-    if (dec_rst) begin
-      \$309  = 1'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$310  = s1;
     if (dec_rst) begin
       \$310  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$311  = s1_addr;
-    if (dec_rst) begin
-      \$311  = 14'h0000;
+    \$311  = cq;
+    if (cell_take) begin
+      \$311  = \$92 [1:0];
     end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$312  = s1_byte;
-    if (dec_rst) begin
-      \$312  = 2'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$313  = \$99 ;
-    if (dec_rst) begin
-      \$313  = 27'h0000000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$314  = s1b;
-    if (dec_rst) begin
-      \$314  = 1'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$315  = \$102 [39:0];
-    if (dec_rst) begin
-      \$315  = 40'h0000000000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$316  = s1b_addr;
-    if (dec_rst) begin
-      \$316  = 14'h0000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$317  = s1b_byte;
-    if (dec_rst) begin
-      \$317  = 2'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$318  = s2;
-    if (dec_rst) begin
-      \$318  = 1'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$319  = \$106 [7:0];
-    if (dec_rst) begin
-      \$319  = 8'h00;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$320  = s2_addr;
-    if (dec_rst) begin
-      \$320  = 14'h0000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$321  = s2_byte;
-    if (dec_rst) begin
-      \$321  = 2'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$322  = loading;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$322  = 1'h1;
+            \$311  = 2'h0;
+          end
+    endcase
+    if (dec_rst) begin
+      \$311  = 2'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    (* full_case = 32'd1 *)
+    if (\$93 ) begin
+      \$312  = { \$96 [22], \$96 [22], \$96 [22], \$96  };
+    end else if (\$94 ) begin
+      \$312  = { \$99 [24], \$99  };
+    end else begin
+      \$312  = { \$102 [24], \$102  };
+    end
+    if (dec_rst) begin
+      \$312  = 26'h0000000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$313  = \issue$115 ;
+    if (dec_rst) begin
+      \$313  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$314  = tgt_addr;
+    if (dec_rst) begin
+      \$314  = 14'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$315  = tgt_byte;
+    if (dec_rst) begin
+      \$315  = 2'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$316  = \$103 ;
+    if (dec_rst) begin
+      \$316  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$317  = s1;
+    if (dec_rst) begin
+      \$317  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$318  = s1_addr;
+    if (dec_rst) begin
+      \$318  = 14'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$319  = s1_byte;
+    if (dec_rst) begin
+      \$319  = 2'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$320  = \$105 ;
+    if (dec_rst) begin
+      \$320  = 27'h0000000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$321  = s1b;
+    if (dec_rst) begin
+      \$321  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$322  = \$108 [39:0];
+    if (dec_rst) begin
+      \$322  = 40'h0000000000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$323  = s1b_addr;
+    if (dec_rst) begin
+      \$323  = 14'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$324  = s1b_byte;
+    if (dec_rst) begin
+      \$324  = 2'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$325  = s2;
+    if (dec_rst) begin
+      \$325  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$326  = \$112 [7:0];
+    if (dec_rst) begin
+      \$326  = 8'h00;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$327  = s2_addr;
+    if (dec_rst) begin
+      \$327  = 14'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$328  = s2_byte;
+    if (dec_rst) begin
+      \$328  = 2'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$329  = loading;
+    casez (fsm_state)
+      5'h00:
+          if (go) begin
+            \$329  = 1'h1;
           end
       5'h01:
           /* empty */;
@@ -107290,27 +107369,27 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h04:
           /* empty */;
       5'h05:
-          if (\$262 ) begin
-            \$322  = 1'h0;
+          if (\$268 ) begin
+            \$329  = 1'h0;
           end
       5'h06:
           /* empty */;
       5'h02:
-          if (\$277 ) begin
-            \$322  = 1'h0;
+          if (\$283 ) begin
+            \$329  = 1'h0;
           end
     endcase
     if (dec_rst) begin
-      \$322  = 1'h0;
+      \$329  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$323  = w;
+    \$330  = w;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$323  = 15'h0000;
+            \$330  = 15'h0000;
           end
       5'h01:
           /* empty */;
@@ -107323,21 +107402,21 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h06:
           /* empty */;
       5'h02:
-          if (\$264 ) begin
-            \$323  = \$267 [14:0];
+          if (\$270 ) begin
+            \$330  = \$273 [14:0];
           end
     endcase
     if (dec_rst) begin
-      \$323  = 15'h0000;
+      \$330  = 15'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$324  = half;
+    \$331  = half;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$324  = 1'h0;
+            \$331  = 1'h0;
           end
       5'h01:
           /* empty */;
@@ -107350,21 +107429,21 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h06:
           /* empty */;
       5'h02:
-          if (\$264 ) begin
-            \$324  = \$268 ;
+          if (\$270 ) begin
+            \$331  = \$274 ;
           end
     endcase
     if (dec_rst) begin
-      \$324  = 1'h0;
+      \$331  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$325  = jc;
+    \$332  = jc;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$325  = 16'h0000;
+            \$332  = 16'h0000;
           end
       5'h01:
           /* empty */;
@@ -107372,20 +107451,20 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
           /* empty */;
       5'h04:
           if (cell_end) begin
-            \$325  = \$251 [15:0];
+            \$332  = \$257 [15:0];
           end
     endcase
     if (dec_rst) begin
-      \$325  = 16'h0000;
+      \$332  = 16'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$326  = ph;
+    \$333  = ph;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$326  = 2'h0;
+            \$333  = 2'h0;
           end
       5'h01:
           /* empty */;
@@ -107393,1072 +107472,889 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
           /* empty */;
       5'h04:
         begin
-          \$326  = \$145 [1:0];
+          \$333  = \$151 [1:0];
           if (cell_end) begin
-            \$326  = 2'h0;
+            \$333  = 2'h0;
           end
         end
     endcase
     if (dec_rst) begin
-      \$326  = 2'h0;
+      \$333  = 2'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$327  = v;
+    \$334  = v;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$327  = 17'h00000;
+            \$334  = 17'h00000;
           end
       5'h01:
           /* empty */;
       5'h03:
           /* empty */;
       5'h04:
-          \$327  = \$144 [16:0];
+          \$334  = \$150 [16:0];
     endcase
     if (dec_rst) begin
-      \$327  = 17'h00000;
+      \$334  = 17'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$328  = pr;
+    \$335  = pr;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$328  = 7'h00;
+            \$335  = 7'h00;
           end
       5'h01:
           /* empty */;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$146 ) begin
+          if (\$152 ) begin
             (* full_case = 32'd1 *)
-            if (\$148 ) begin
-              \$328  = 7'h00;
+            if (\$154 ) begin
+              \$335  = 7'h00;
             end else begin
-              \$328  = \$150 [6:0];
+              \$335  = \$156 [6:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$328  = 7'h00;
+      \$335  = 7'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$329  = pc;
+    \$336  = pc;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$329  = 11'h000;
+            \$336  = 11'h000;
           end
       5'h01:
           /* empty */;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$146 ) begin
-            if (\$148 ) begin
-              \$329  = \$149 [10:0];
+          if (\$152 ) begin
+            if (\$154 ) begin
+              \$336  = \$155 [10:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$329  = 11'h000;
+      \$336  = 11'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$330  = pr90;
+    \$337  = pr90;
     casez (fsm_state)
       5'h00:
           if (go) begin
-            \$330  = 14'h0000;
+            \$337  = 14'h0000;
           end
       5'h01:
           /* empty */;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$146 ) begin
+          if (\$152 ) begin
             (* full_case = 32'd1 *)
-            if (\$148 ) begin
-              \$330  = 14'h0000;
+            if (\$154 ) begin
+              \$337  = 14'h0000;
             end else begin
-              \$330  = \$151 [13:0];
+              \$337  = \$157 [13:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$330  = 14'h0000;
+      \$337  = 14'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$331  = fsm_state;
+    \$338  = fsm_state;
     casez (fsm_state)
       5'h00:
           if (go) begin
             (* full_case = 32'd1 *)
             if (cells) begin
-              \$331  = 5'h01;
+              \$338  = 5'h01;
             end else begin
-              \$331  = 5'h02;
+              \$338  = 5'h02;
             end
           end
       5'h01:
           if (cell_av) begin
-            \$331  = 5'h03;
+            \$338  = 5'h03;
           end
       5'h03:
-          if (\$143 ) begin
-            \$331  = 5'h04;
+          if (\$149 ) begin
+            \$338  = 5'h04;
           end else if (cell_av) begin
-            \$331  = 5'h04;
+            \$338  = 5'h04;
           end
       5'h04:
           if (cell_end) begin
             (* full_case = 32'd1 *)
-            if (\$253 ) begin
-              \$331  = 5'h05;
+            if (\$259 ) begin
+              \$338  = 5'h05;
             end else begin
-              \$331  = 5'h03;
+              \$338  = 5'h03;
             end
           end
       5'h05:
-          if (\$262 ) begin
-            \$331  = 5'h06;
+          if (\$268 ) begin
+            \$338  = 5'h06;
           end
       5'h06:
           (* full_case = 32'd1 *)
           if (load_only) begin
-            \$331  = 5'h00;
+            \$338  = 5'h00;
           end else begin
-            \$331  = 5'h07;
+            \$338  = 5'h07;
           end
       5'h02:
-          if (\$277 ) begin
-            \$331  = 5'h06;
+          if (\$283 ) begin
+            \$338  = 5'h06;
           end
       5'h07:
-          \$331  = 5'h08;
+          \$338  = 5'h08;
       5'h08:
-          \$331  = 5'h09;
+          \$338  = 5'h09;
       5'h09:
-          if (\$278 ) begin
-            \$331  = 5'h0a;
+          if (\$284 ) begin
+            \$338  = 5'h0a;
           end
       5'h0a:
-          if (\$286 ) begin
-            \$331  = 5'h0b;
+          if (\$292 ) begin
+            \$338  = 5'h0b;
           end
       5'h0b:
-          \$331  = 5'h0c;
+          \$338  = 5'h0c;
       5'h0c:
           if (m_axi_awready) begin
-            \$331  = 5'h0d;
+            \$338  = 5'h0d;
           end
       5'h0d:
-          if (\$289 ) begin
+          if (\$295 ) begin
             (* full_case = 32'd1 *)
-            if (\$292 ) begin
+            if (\$298 ) begin
               (* full_case = 32'd1 *)
-              if (\$294 ) begin
-                \$331  = 5'h0e;
+              if (\$300 ) begin
+                \$338  = 5'h0e;
               end else begin
-                \$331  = 5'h0b;
+                \$338  = 5'h0b;
               end
             end else begin
-              \$331  = 5'h0f;
+              \$338  = 5'h0f;
             end
           end
       5'h0f:
-          \$331  = 5'h10;
+          \$338  = 5'h10;
       5'h10:
-          \$331  = 5'h0d;
+          \$338  = 5'h0d;
       5'h0e:
-          if (\$298 ) begin
-            \$331  = 5'h00;
+          if (\$304 ) begin
+            \$338  = 5'h00;
           end
     endcase
     if (dec_rst) begin
-      \$331  = 5'h00;
+      \$338  = 5'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$332  = col_i0;
+    \$339  = col_i0;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$332  = 13'h0000;
+          \$339  = 13'h0000;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$155 ) begin
-              \$332  = 13'h0000;
+            if (\$161 ) begin
+              \$339  = 13'h0000;
             end else begin
-              \$332  = \$160 [12:0];
+              \$339  = \$166 [12:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$332  = 13'h0000;
+      \$339  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$333  = col_pos0;
+    \$340  = col_pos0;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$333  = { 16'h0000, \$110  };
+          \$340  = { 16'h0000, \$116  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$155 ) begin
-              \$333  = { 16'h0000, \$156  };
+            if (\$161 ) begin
+              \$340  = { 16'h0000, \$162  };
             end else begin
-              \$333  = \$161 [16:0];
+              \$340  = \$167 [16:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$333  = 17'h00000;
+      \$340  = 17'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$334  = col_t0;
+    \$341  = col_t0;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$334  = { 7'h00, \$111  };
+          \$341  = { 7'h00, \$117  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$155 ) begin
-              \$334  = { 7'h00, \$157  };
+            if (\$161 ) begin
+              \$341  = { 7'h00, \$163  };
             end else begin
-              if (\$162 ) begin
-              end else if (\$163 ) begin
-                \$334  = \$164 [7:0];
+              if (\$168 ) begin
+              end else if (\$169 ) begin
+                \$341  = \$170 [7:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$334  = 8'h00;
+      \$341  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$335  = col_t900;
+    \$342  = col_t900;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$335  = { 13'h0000, \$112  };
+          \$342  = { 13'h0000, \$118  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$155 ) begin
-              \$335  = { 13'h0000, \$158  };
+            if (\$161 ) begin
+              \$342  = { 13'h0000, \$164  };
             end else begin
-              if (\$162 ) begin
-              end else if (\$163 ) begin
-                \$335  = \$165 [13:0];
+              if (\$168 ) begin
+              end else if (\$169 ) begin
+                \$342  = \$171 [13:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$335  = 14'h0000;
+      \$342  = 14'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$336  = col_s0;
+    \$343  = col_s0;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$336  = { 8'h00, \$113  };
+          \$343  = { 8'h00, \$119  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$155 ) begin
-              \$336  = { 8'h00, \$159  };
+            if (\$161 ) begin
+              \$343  = { 8'h00, \$165  };
             end else begin
               (* full_case = 32'd1 *)
-              if (\$162 ) begin
-              end else if (\$163 ) begin
-                \$336  = 9'h000;
+              if (\$168 ) begin
+              end else if (\$169 ) begin
+                \$343  = 9'h000;
               end else begin
-                \$336  = \$166 [8:0];
+                \$343  = \$172 [8:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$336  = 9'h000;
+      \$343  = 9'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$337  = col_i1;
+    \$344  = col_i1;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$337  = 13'h0000;
+          \$344  = 13'h0000;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$167 ) begin
-              \$337  = 13'h0000;
+            if (\$173 ) begin
+              \$344  = 13'h0000;
             end else begin
-              \$337  = \$172 [12:0];
+              \$344  = \$178 [12:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$337  = 13'h0000;
+      \$344  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$338  = col_pos1;
+    \$345  = col_pos1;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$338  = { 4'h0, \$114  };
+          \$345  = { 4'h0, \$120  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$167 ) begin
-              \$338  = { 4'h0, \$168  };
+            if (\$173 ) begin
+              \$345  = { 4'h0, \$174  };
             end else begin
-              \$338  = \$173 [16:0];
+              \$345  = \$179 [16:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$338  = 17'h00000;
+      \$345  = 17'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$339  = col_t1;
+    \$346  = col_t1;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$339  = { 7'h00, \$115  };
+          \$346  = { 7'h00, \$121  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$167 ) begin
-              \$339  = { 7'h00, \$169  };
+            if (\$173 ) begin
+              \$346  = { 7'h00, \$175  };
             end else begin
-              if (\$174 ) begin
-              end else if (\$175 ) begin
-                \$339  = \$176 [7:0];
+              if (\$180 ) begin
+              end else if (\$181 ) begin
+                \$346  = \$182 [7:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$339  = 8'h00;
+      \$346  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$340  = col_t901;
+    \$347  = col_t901;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$340  = { 13'h0000, \$116  };
+          \$347  = { 13'h0000, \$122  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$167 ) begin
-              \$340  = { 13'h0000, \$170  };
+            if (\$173 ) begin
+              \$347  = { 13'h0000, \$176  };
             end else begin
-              if (\$174 ) begin
-              end else if (\$175 ) begin
-                \$340  = \$177 [13:0];
+              if (\$180 ) begin
+              end else if (\$181 ) begin
+                \$347  = \$183 [13:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$340  = 14'h0000;
+      \$347  = 14'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$341  = col_s1;
+    \$348  = col_s1;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$341  = { 8'h00, \$117  };
+          \$348  = { 8'h00, \$123  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$167 ) begin
-              \$341  = { 8'h00, \$171  };
+            if (\$173 ) begin
+              \$348  = { 8'h00, \$177  };
             end else begin
               (* full_case = 32'd1 *)
-              if (\$174 ) begin
-              end else if (\$175 ) begin
-                \$341  = 9'h000;
+              if (\$180 ) begin
+              end else if (\$181 ) begin
+                \$348  = 9'h000;
               end else begin
-                \$341  = \$178 [8:0];
+                \$348  = \$184 [8:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$341  = 9'h000;
+      \$348  = 9'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$342  = col_i2;
+    \$349  = col_i2;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$342  = 13'h1fa2;
+          \$349  = 13'h1fa2;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$179 ) begin
-              \$342  = 13'h0000;
+            if (\$185 ) begin
+              \$349  = 13'h0000;
             end else begin
-              \$342  = \$184 [12:0];
+              \$349  = \$190 [12:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$342  = 13'h0000;
+      \$349  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$343  = col_pos2;
+    \$350  = col_pos2;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$343  = { 2'h0, \$118  };
+          \$350  = { 2'h0, \$124  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$179 ) begin
-              \$343  = { 3'h0, \$180  };
+            if (\$185 ) begin
+              \$350  = { 3'h0, \$186  };
             end else begin
-              \$343  = \$185 [16:0];
+              \$350  = \$191 [16:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$343  = 17'h00000;
+      \$350  = 17'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$344  = col_t2;
+    \$351  = col_t2;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$344  = { 7'h00, \$119  };
+          \$351  = { 7'h00, \$125  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$179 ) begin
-              \$344  = { 7'h00, \$181  };
+            if (\$185 ) begin
+              \$351  = { 7'h00, \$187  };
             end else begin
-              if (\$186 ) begin
-              end else if (\$187 ) begin
-                \$344  = \$188 [7:0];
+              if (\$192 ) begin
+              end else if (\$193 ) begin
+                \$351  = \$194 [7:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$344  = 8'h00;
+      \$351  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$345  = col_t902;
+    \$352  = col_t902;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$345  = { 13'h0000, \$120  };
+          \$352  = { 13'h0000, \$126  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$179 ) begin
-              \$345  = { 13'h0000, \$182  };
+            if (\$185 ) begin
+              \$352  = { 13'h0000, \$188  };
             end else begin
-              if (\$186 ) begin
-              end else if (\$187 ) begin
-                \$345  = \$189 [13:0];
+              if (\$192 ) begin
+              end else if (\$193 ) begin
+                \$352  = \$195 [13:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$345  = 14'h0000;
+      \$352  = 14'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$346  = col_s2;
+    \$353  = col_s2;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$346  = { 8'h00, \$121  };
+          \$353  = { 8'h00, \$127  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$179 ) begin
-              \$346  = { 8'h00, \$183  };
+            if (\$185 ) begin
+              \$353  = { 8'h00, \$189  };
             end else begin
               (* full_case = 32'd1 *)
-              if (\$186 ) begin
-              end else if (\$187 ) begin
-                \$346  = 9'h000;
+              if (\$192 ) begin
+              end else if (\$193 ) begin
+                \$353  = 9'h000;
               end else begin
-                \$346  = \$190 [8:0];
+                \$353  = \$196 [8:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$346  = 9'h000;
+      \$353  = 9'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$347  = col_i3;
+    \$354  = col_i3;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$347  = 13'h1fa0;
+          \$354  = 13'h1fa0;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$191 ) begin
-              \$347  = 13'h0000;
+            if (\$197 ) begin
+              \$354  = 13'h0000;
             end else begin
-              \$347  = \$196 [12:0];
+              \$354  = \$202 [12:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$347  = 13'h0000;
+      \$354  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$348  = col_pos3;
+    \$355  = col_pos3;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$348  = { 2'h0, \$122  };
+          \$355  = { 2'h0, \$128  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$191 ) begin
-              \$348  = { 2'h0, \$192  };
+            if (\$197 ) begin
+              \$355  = { 2'h0, \$198  };
             end else begin
-              \$348  = \$197 [16:0];
+              \$355  = \$203 [16:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$348  = 17'h00000;
+      \$355  = 17'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$349  = col_t3;
+    \$356  = col_t3;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$349  = { 7'h00, \$123  };
+          \$356  = { 7'h00, \$129  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$191 ) begin
-              \$349  = { 7'h00, \$193  };
+            if (\$197 ) begin
+              \$356  = { 7'h00, \$199  };
             end else begin
-              if (\$198 ) begin
-              end else if (\$199 ) begin
-                \$349  = \$200 [7:0];
+              if (\$204 ) begin
+              end else if (\$205 ) begin
+                \$356  = \$206 [7:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$349  = 8'h00;
+      \$356  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$350  = col_t903;
+    \$357  = col_t903;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$350  = { 13'h0000, \$124  };
+          \$357  = { 13'h0000, \$130  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$191 ) begin
-              \$350  = { 13'h0000, \$194  };
+            if (\$197 ) begin
+              \$357  = { 13'h0000, \$200  };
             end else begin
-              if (\$198 ) begin
-              end else if (\$199 ) begin
-                \$350  = \$201 [13:0];
+              if (\$204 ) begin
+              end else if (\$205 ) begin
+                \$357  = \$207 [13:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$350  = 14'h0000;
+      \$357  = 14'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$351  = col_s3;
+    \$358  = col_s3;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$351  = { 8'h00, \$125  };
+          \$358  = { 8'h00, \$131  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$191 ) begin
-              \$351  = { 8'h00, \$195  };
+            if (\$197 ) begin
+              \$358  = { 8'h00, \$201  };
             end else begin
               (* full_case = 32'd1 *)
-              if (\$198 ) begin
-              end else if (\$199 ) begin
-                \$351  = 9'h000;
+              if (\$204 ) begin
+              end else if (\$205 ) begin
+                \$358  = 9'h000;
               end else begin
-                \$351  = \$202 [8:0];
+                \$358  = \$208 [8:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$351  = 9'h000;
+      \$358  = 9'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$352  = col_i4;
+    \$359  = col_i4;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$352  = 13'h1fa0;
+          \$359  = 13'h1fa0;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$203 ) begin
-              \$352  = 13'h0000;
+            if (\$209 ) begin
+              \$359  = 13'h0000;
             end else begin
-              \$352  = \$208 [12:0];
+              \$359  = \$214 [12:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$352  = 13'h0000;
+      \$359  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$353  = col_pos4;
+    \$360  = col_pos4;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$353  = { 1'h0, \$126  };
+          \$360  = { 1'h0, \$132  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$203 ) begin
-              \$353  = { 2'h0, \$204  };
+            if (\$209 ) begin
+              \$360  = { 2'h0, \$210  };
             end else begin
-              \$353  = \$209 [16:0];
+              \$360  = \$215 [16:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$353  = 17'h00000;
+      \$360  = 17'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$354  = col_t4;
+    \$361  = col_t4;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$354  = { 3'h0, \$127  };
+          \$361  = { 3'h0, \$133  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$203 ) begin
-              \$354  = { 7'h00, \$205  };
+            if (\$209 ) begin
+              \$361  = { 7'h00, \$211  };
             end else begin
-              if (\$210 ) begin
-              end else if (\$211 ) begin
-                \$354  = \$212 [7:0];
+              if (\$216 ) begin
+              end else if (\$217 ) begin
+                \$361  = \$218 [7:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$354  = 8'h00;
+      \$361  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$355  = col_t904;
+    \$362  = col_t904;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$355  = { 3'h0, \$128  };
+          \$362  = { 3'h0, \$134  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$203 ) begin
-              \$355  = { 13'h0000, \$206  };
+            if (\$209 ) begin
+              \$362  = { 13'h0000, \$212  };
             end else begin
-              if (\$210 ) begin
-              end else if (\$211 ) begin
-                \$355  = \$213 [13:0];
+              if (\$216 ) begin
+              end else if (\$217 ) begin
+                \$362  = \$219 [13:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$355  = 14'h0000;
+      \$362  = 14'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$356  = col_s4;
+    \$363  = col_s4;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$356  = { 1'h0, \$129  };
+          \$363  = { 1'h0, \$135  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$203 ) begin
-              \$356  = { 8'h00, \$207  };
+            if (\$209 ) begin
+              \$363  = { 8'h00, \$213  };
             end else begin
               (* full_case = 32'd1 *)
-              if (\$210 ) begin
-              end else if (\$211 ) begin
-                \$356  = 9'h000;
+              if (\$216 ) begin
+              end else if (\$217 ) begin
+                \$363  = 9'h000;
               end else begin
-                \$356  = \$214 [8:0];
+                \$363  = \$220 [8:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$356  = 9'h000;
+      \$363  = 9'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$357  = col_i5;
+    \$364  = col_i5;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$357  = 13'h1f9f;
+          \$364  = 13'h1f9f;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$215 ) begin
-              \$357  = 13'h0000;
+            if (\$221 ) begin
+              \$364  = 13'h0000;
             end else begin
-              \$357  = \$220 [12:0];
+              \$364  = \$226 [12:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$357  = 13'h0000;
+      \$364  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$358  = col_pos5;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$358  = { 1'h0, \$130  };
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$215 ) begin
-              \$358  = { 1'h0, \$216  };
-            end else begin
-              \$358  = \$221 [16:0];
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$358  = 17'h00000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$359  = col_t5;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$359  = { 2'h0, \$131  };
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$215 ) begin
-              \$359  = { 3'h0, \$217  };
-            end else begin
-              if (\$222 ) begin
-              end else if (\$223 ) begin
-                \$359  = \$224 [7:0];
-              end
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$359  = 8'h00;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$360  = col_t905;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$360  = { 2'h0, \$132  };
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$215 ) begin
-              \$360  = { 3'h0, \$218  };
-            end else begin
-              if (\$222 ) begin
-              end else if (\$223 ) begin
-                \$360  = \$225 [13:0];
-              end
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$360  = 14'h0000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$361  = col_s5;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$361  = \$133 ;
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$215 ) begin
-              \$361  = { 1'h0, \$219  };
-            end else begin
-              (* full_case = 32'd1 *)
-              if (\$222 ) begin
-              end else if (\$223 ) begin
-                \$361  = 9'h000;
-              end else begin
-                \$361  = \$226 [8:0];
-              end
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$361  = 9'h000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$362  = col_i6;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$362  = 13'h1f9d;
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$227 ) begin
-              \$362  = 13'h0000;
-            end else begin
-              \$362  = \$232 [12:0];
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$362  = 13'h0000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$363  = col_pos6;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$363  = { 1'h0, \$134  };
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$227 ) begin
-              \$363  = { 1'h0, \$228  };
-            end else begin
-              \$363  = \$233 [16:0];
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$363  = 17'h00000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$364  = col_t6;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$364  = { 1'h0, \$135  };
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$227 ) begin
-              \$364  = { 2'h0, \$229  };
-            end else begin
-              if (\$234 ) begin
-              end else if (\$235 ) begin
-                \$364  = \$236 [7:0];
-              end
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$364  = 8'h00;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$365  = col_t906;
+    \$365  = col_pos5;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -108467,130 +108363,130 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$227 ) begin
-              \$365  = { 2'h0, \$230  };
+            if (\$221 ) begin
+              \$365  = { 1'h0, \$222  };
             end else begin
-              if (\$234 ) begin
-              end else if (\$235 ) begin
-                \$365  = \$237 [13:0];
+              \$365  = \$227 [16:0];
+            end
+          end
+    endcase
+    if (dec_rst) begin
+      \$365  = 17'h00000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$366  = col_t5;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          \$366  = { 2'h0, \$137  };
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$221 ) begin
+              \$366  = { 3'h0, \$223  };
+            end else begin
+              if (\$228 ) begin
+              end else if (\$229 ) begin
+                \$366  = \$230 [7:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$365  = 14'h0000;
+      \$366  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$366  = col_s6;
+    \$367  = col_t905;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$366  = { 1'h0, \$137  };
+          \$367  = { 2'h0, \$138  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$227 ) begin
-              \$366  = { 8'h00, \$231  };
+            if (\$221 ) begin
+              \$367  = { 3'h0, \$224  };
+            end else begin
+              if (\$228 ) begin
+              end else if (\$229 ) begin
+                \$367  = \$231 [13:0];
+              end
+            end
+          end
+    endcase
+    if (dec_rst) begin
+      \$367  = 14'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$368  = col_s5;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          \$368  = \$139 ;
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$221 ) begin
+              \$368  = { 1'h0, \$225  };
             end else begin
               (* full_case = 32'd1 *)
-              if (\$234 ) begin
-              end else if (\$235 ) begin
-                \$366  = 9'h000;
+              if (\$228 ) begin
+              end else if (\$229 ) begin
+                \$368  = 9'h000;
               end else begin
-                \$366  = \$238 [8:0];
+                \$368  = \$232 [8:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$366  = 9'h000;
+      \$368  = 9'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$367  = col_i7;
+    \$369  = col_i6;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$367  = 13'h1f9d;
+          \$369  = 13'h1f9d;
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$239 ) begin
-              \$367  = 13'h0000;
+            if (\$233 ) begin
+              \$369  = 13'h0000;
             end else begin
-              \$367  = \$244 [12:0];
+              \$369  = \$238 [12:0];
             end
           end
     endcase
     if (dec_rst) begin
-      \$367  = 13'h0000;
+      \$369  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$368  = col_pos7;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$368  = { 1'h0, \$138  };
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$239 ) begin
-              \$368  = { 1'h0, \$240  };
-            end else begin
-              \$368  = \$245 [16:0];
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$368  = 17'h00000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$369  = col_t7;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          \$369  = { 1'h0, \$139  };
-      5'h03:
-          /* empty */;
-      5'h04:
-          if (\$154 ) begin
-            (* full_case = 32'd1 *)
-            if (\$239 ) begin
-              \$369  = { 1'h0, \$241  };
-            end else begin
-              if (\$246 ) begin
-              end else if (\$247 ) begin
-                \$369  = \$248 [7:0];
-              end
-            end
-          end
-    endcase
-    if (dec_rst) begin
-      \$369  = 8'h00;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$370  = col_t907;
+    \$370  = col_pos6;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -108599,140 +108495,172 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$239 ) begin
-              \$370  = { 1'h0, \$242  };
+            if (\$233 ) begin
+              \$370  = { 1'h0, \$234  };
             end else begin
-              if (\$246 ) begin
-              end else if (\$247 ) begin
-                \$370  = \$249 [13:0];
+              \$370  = \$239 [16:0];
+            end
+          end
+    endcase
+    if (dec_rst) begin
+      \$370  = 17'h00000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$371  = col_t6;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          \$371  = { 1'h0, \$141  };
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$233 ) begin
+              \$371  = { 2'h0, \$235  };
+            end else begin
+              if (\$240 ) begin
+              end else if (\$241 ) begin
+                \$371  = \$242 [7:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$370  = 14'h0000;
+      \$371  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$371  = col_s7;
+    \$372  = col_t906;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          \$371  = \$141 ;
+          \$372  = { 1'h0, \$142  };
       5'h03:
           /* empty */;
       5'h04:
-          if (\$154 ) begin
+          if (\$160 ) begin
             (* full_case = 32'd1 *)
-            if (\$239 ) begin
-              \$371  = { 1'h0, \$243  };
+            if (\$233 ) begin
+              \$372  = { 2'h0, \$236  };
+            end else begin
+              if (\$240 ) begin
+              end else if (\$241 ) begin
+                \$372  = \$243 [13:0];
+              end
+            end
+          end
+    endcase
+    if (dec_rst) begin
+      \$372  = 14'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$373  = col_s6;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          \$373  = { 1'h0, \$143  };
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$233 ) begin
+              \$373  = { 8'h00, \$237  };
             end else begin
               (* full_case = 32'd1 *)
-              if (\$246 ) begin
-              end else if (\$247 ) begin
-                \$371  = 9'h000;
+              if (\$240 ) begin
+              end else if (\$241 ) begin
+                \$373  = 9'h000;
               end else begin
-                \$371  = \$250 [8:0];
+                \$373  = \$244 [8:0];
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$371  = 9'h000;
+      \$373  = 9'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$372  = a_i;
+    \$374  = col_i7;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          if (cell_av) begin
-            \$372  = \cell [7:0];
-          end
+          \$374  = 13'h1f9d;
       5'h03:
           /* empty */;
       5'h04:
-          if (cell_end) begin
-            \$372  = nxt_i;
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$245 ) begin
+              \$374  = 13'h0000;
+            end else begin
+              \$374  = \$250 [12:0];
+            end
           end
     endcase
     if (dec_rst) begin
-      \$372  = 8'h00;
+      \$374  = 13'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$373  = cur_q;
+    \$375  = col_pos7;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          if (cell_av) begin
-            \$373  = \cell [15:8];
-          end
+          \$375  = { 1'h0, \$144  };
       5'h03:
           /* empty */;
       5'h04:
-          if (cell_end) begin
-            \$373  = nxt_q;
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$245 ) begin
+              \$375  = { 1'h0, \$246  };
+            end else begin
+              \$375  = \$251 [16:0];
+            end
           end
     endcase
     if (dec_rst) begin
-      \$373  = 8'h00;
+      \$375  = 17'h00000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$374  = first_q;
+    \$376  = col_t7;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
-          if (cell_av) begin
-            \$374  = \cell [15:8];
-          end
-    endcase
-    if (dec_rst) begin
-      \$374  = 8'h00;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$375  = nq;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          /* empty */;
+          \$376  = { 1'h0, \$145  };
       5'h03:
-          if (\$143 ) begin
-            \$375  = first_q;
-          end else if (cell_av) begin
-            \$375  = \cell [15:8];
-          end
-    endcase
-    if (dec_rst) begin
-      \$375  = 8'h00;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$376  = nxt_i;
-    casez (fsm_state)
-      5'h00:
           /* empty */;
-      5'h01:
-          /* empty */;
-      5'h03:
-          if (\$143 ) begin
-          end else if (cell_av) begin
-            \$376  = \cell [7:0];
+      5'h04:
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$245 ) begin
+              \$376  = { 1'h0, \$247  };
+            end else begin
+              if (\$252 ) begin
+              end else if (\$253 ) begin
+                \$376  = \$254 [7:0];
+              end
+            end
           end
     endcase
     if (dec_rst) begin
@@ -108741,25 +108669,176 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$377  = nxt_q;
+    \$377  = col_t907;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          \$377  = { 1'h0, \$146  };
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$245 ) begin
+              \$377  = { 1'h0, \$248  };
+            end else begin
+              if (\$252 ) begin
+              end else if (\$253 ) begin
+                \$377  = \$255 [13:0];
+              end
+            end
+          end
+    endcase
+    if (dec_rst) begin
+      \$377  = 14'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$378  = col_s7;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          \$378  = \$147 ;
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (\$160 ) begin
+            (* full_case = 32'd1 *)
+            if (\$245 ) begin
+              \$378  = { 1'h0, \$249  };
+            end else begin
+              (* full_case = 32'd1 *)
+              if (\$252 ) begin
+              end else if (\$253 ) begin
+                \$378  = 9'h000;
+              end else begin
+                \$378  = \$256 [8:0];
+              end
+            end
+          end
+    endcase
+    if (dec_rst) begin
+      \$378  = 9'h000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$379  = a_i;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          if (cell_av) begin
+            \$379  = \cell [7:0];
+          end
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (cell_end) begin
+            \$379  = nxt_i;
+          end
+    endcase
+    if (dec_rst) begin
+      \$379  = 8'h00;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$380  = cur_q;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          if (cell_av) begin
+            \$380  = \cell [15:8];
+          end
+      5'h03:
+          /* empty */;
+      5'h04:
+          if (cell_end) begin
+            \$380  = nxt_q;
+          end
+    endcase
+    if (dec_rst) begin
+      \$380  = 8'h00;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$381  = first_q;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          if (cell_av) begin
+            \$381  = \cell [15:8];
+          end
+    endcase
+    if (dec_rst) begin
+      \$381  = 8'h00;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$382  = nq;
     casez (fsm_state)
       5'h00:
           /* empty */;
       5'h01:
           /* empty */;
       5'h03:
-          if (\$143 ) begin
+          if (\$149 ) begin
+            \$382  = first_q;
           end else if (cell_av) begin
-            \$377  = \cell [15:8];
+            \$382  = \cell [15:8];
           end
     endcase
     if (dec_rst) begin
-      \$377  = 8'h00;
+      \$382  = 8'h00;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$378  = i;
+    \$383  = nxt_i;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          /* empty */;
+      5'h03:
+          if (\$149 ) begin
+          end else if (cell_av) begin
+            \$383  = \cell [7:0];
+          end
+    endcase
+    if (dec_rst) begin
+      \$383  = 8'h00;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$384  = nxt_q;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          /* empty */;
+      5'h03:
+          if (\$149 ) begin
+          end else if (cell_av) begin
+            \$384  = \cell [15:8];
+          end
+    endcase
+    if (dec_rst) begin
+      \$384  = 8'h00;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$385  = i;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -108780,21 +108859,21 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h08:
           /* empty */;
       5'h09:
-          if (\$278 ) begin
-            \$378  = 15'h0000;
+          if (\$284 ) begin
+            \$385  = 15'h0000;
           end
       5'h0a:
           if (issuing) begin
-            \$378  = \$279 [14:0];
+            \$385  = \$285 [14:0];
           end
     endcase
     if (dec_rst) begin
-      \$378  = 15'h0000;
+      \$385  = 15'h0000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$379  = k;
+    \$386  = k;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -108815,18 +108894,18 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h08:
           /* empty */;
       5'h09:
-          if (\$278 ) begin
-            \$379  = 12'h000;
+          if (\$284 ) begin
+            \$386  = 12'h000;
           end
       5'h0a:
         begin
           if (rd_ok) begin
-            if (\$282 ) begin
-              \$379  = \$283 [11:0];
+            if (\$288 ) begin
+              \$386  = \$289 [11:0];
             end
           end
-          if (\$286 ) begin
-            \$379  = 12'h000;
+          if (\$292 ) begin
+            \$386  = 12'h000;
           end
         end
       5'h0b:
@@ -108834,17 +108913,17 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h0c:
           /* empty */;
       5'h0d:
-          if (\$289 ) begin
-            \$379  = \$290 [11:0];
+          if (\$295 ) begin
+            \$386  = \$296 [11:0];
           end
     endcase
     if (dec_rst) begin
-      \$379  = 12'h000;
+      \$386  = 12'h000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$380  = rd_ok;
+    \$387  = rd_ok;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -108865,124 +108944,124 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h08:
           /* empty */;
       5'h09:
-          if (\$278 ) begin
-            \$380  = 1'h0;
-          end
-      5'h0a:
-          \$380  = issuing;
-    endcase
-    if (dec_rst) begin
-      \$380  = 1'h0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$381  = acc;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          /* empty */;
-      5'h03:
-          /* empty */;
-      5'h04:
-          /* empty */;
-      5'h05:
-          /* empty */;
-      5'h06:
-          /* empty */;
-      5'h02:
-          /* empty */;
-      5'h07:
-          /* empty */;
-      5'h08:
-          /* empty */;
-      5'h09:
-          if (\$278 ) begin
-            \$381  = 32'd0;
+          if (\$284 ) begin
+            \$387  = 1'h0;
           end
       5'h0a:
-          if (rd_ok) begin
-            \$381  = \$281 ;
+          \$387  = issuing;
+    endcase
+    if (dec_rst) begin
+      \$387  = 1'h0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$388  = acc;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          /* empty */;
+      5'h03:
+          /* empty */;
+      5'h04:
+          /* empty */;
+      5'h05:
+          /* empty */;
+      5'h06:
+          /* empty */;
+      5'h02:
+          /* empty */;
+      5'h07:
+          /* empty */;
+      5'h08:
+          /* empty */;
+      5'h09:
+          if (\$284 ) begin
+            \$388  = 32'd0;
           end
-    endcase
-    if (dec_rst) begin
-      \$381  = 32'd0;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$382  = i1;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          /* empty */;
-      5'h03:
-          /* empty */;
-      5'h04:
-          /* empty */;
-      5'h05:
-          /* empty */;
-      5'h06:
-          /* empty */;
-      5'h02:
-          /* empty */;
-      5'h07:
-          /* empty */;
-      5'h08:
-          /* empty */;
-      5'h09:
-          /* empty */;
-      5'h0a:
-          \$382  = i;
-    endcase
-    if (dec_rst) begin
-      \$382  = 15'h0000;
-    end
-  end
-  always @* begin
-    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$383  = lo;
-    casez (fsm_state)
-      5'h00:
-          /* empty */;
-      5'h01:
-          /* empty */;
-      5'h03:
-          /* empty */;
-      5'h04:
-          /* empty */;
-      5'h05:
-          /* empty */;
-      5'h06:
-          /* empty */;
-      5'h02:
-          /* empty */;
-      5'h07:
-          /* empty */;
-      5'h08:
-          /* empty */;
-      5'h09:
-          /* empty */;
       5'h0a:
           if (rd_ok) begin
-            if (\$282 ) begin
+            \$388  = \$287 ;
+          end
+    endcase
+    if (dec_rst) begin
+      \$388  = 32'd0;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$389  = i1;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          /* empty */;
+      5'h03:
+          /* empty */;
+      5'h04:
+          /* empty */;
+      5'h05:
+          /* empty */;
+      5'h06:
+          /* empty */;
+      5'h02:
+          /* empty */;
+      5'h07:
+          /* empty */;
+      5'h08:
+          /* empty */;
+      5'h09:
+          /* empty */;
+      5'h0a:
+          \$389  = i;
+    endcase
+    if (dec_rst) begin
+      \$389  = 15'h0000;
+    end
+  end
+  always @* begin
+    if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
+    \$390  = lo;
+    casez (fsm_state)
+      5'h00:
+          /* empty */;
+      5'h01:
+          /* empty */;
+      5'h03:
+          /* empty */;
+      5'h04:
+          /* empty */;
+      5'h05:
+          /* empty */;
+      5'h06:
+          /* empty */;
+      5'h02:
+          /* empty */;
+      5'h07:
+          /* empty */;
+      5'h08:
+          /* empty */;
+      5'h09:
+          /* empty */;
+      5'h0a:
+          if (rd_ok) begin
+            if (\$288 ) begin
               (* full_case = 32'd1 *)
               if (k[0]) begin
               end else begin
-                \$383  = nacc;
+                \$390  = nacc;
               end
             end
           end
     endcase
     if (dec_rst) begin
-      \$383  = 32'd0;
+      \$390  = 32'd0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$384  = nb;
+    \$391  = nb;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -109005,25 +109084,25 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h09:
           /* empty */;
       5'h0a:
-          if (\$286 ) begin
-            \$384  = 4'h0;
+          if (\$292 ) begin
+            \$391  = 4'h0;
           end
       5'h0b:
           /* empty */;
       5'h0c:
           /* empty */;
       5'h0d:
-          if (\$289 ) begin
-            \$384  = \$291 [3:0];
+          if (\$295 ) begin
+            \$391  = \$297 [3:0];
           end
     endcase
     if (dec_rst) begin
-      \$384  = 4'h0;
+      \$391  = 4'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$385  = m_axi_awvalid;
+    \$392  = m_axi_awvalid;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -109048,19 +109127,19 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
       5'h0a:
           /* empty */;
       5'h0b:
-          \$385  = 1'h1;
+          \$392  = 1'h1;
       5'h0c:
           if (m_axi_awready) begin
-            \$385  = 1'h0;
+            \$392  = 1'h0;
           end
     endcase
     if (dec_rst) begin
-      \$385  = 1'h0;
+      \$392  = 1'h0;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$386  = m_axi_wdata;
+    \$393  = m_axi_wdata;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -109088,22 +109167,22 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
           /* empty */;
       5'h0c:
           if (m_axi_awready) begin
-            \$386  = ob_rd__data;
+            \$393  = ob_rd__data;
           end
       5'h0d:
           /* empty */;
       5'h0f:
           /* empty */;
       5'h10:
-          \$386  = ob_rd__data;
+          \$393  = ob_rd__data;
     endcase
     if (dec_rst) begin
-      \$386  = 64'h0000000000000000;
+      \$393  = 64'h0000000000000000;
     end
   end
   always @* begin
     if (\$auto$verilog_backend.cc:2355:dump_module$5 ) begin end
-    \$387  = m_axi_wvalid;
+    \$394  = m_axi_wvalid;
     casez (fsm_state)
       5'h00:
           /* empty */;
@@ -109131,19 +109210,19 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
           /* empty */;
       5'h0c:
           if (m_axi_awready) begin
-            \$387  = 1'h1;
+            \$394  = 1'h1;
           end
       5'h0d:
-          if (\$289 ) begin
-            \$387  = 1'h0;
+          if (\$295 ) begin
+            \$394  = 1'h0;
           end
       5'h0f:
           /* empty */;
       5'h10:
-          \$387  = 1'h1;
+          \$394  = 1'h1;
     endcase
     if (dec_rst) begin
-      \$387  = 1'h0;
+      \$394  = 1'h0;
     end
   end
   assign m_axi_arid = 6'h00;
@@ -109181,59 +109260,59 @@ module \ldpc_axi.dma (m_axi_wready, m_axi_bvalid, m_axi_arready, w_data, w_en, d
   assign abs_z = \$39 [25:0];
   assign y17 = \$40 [22:0];
   assign llr_we = s3;
-  assign dec_rdata = { \port$909$0 , \port$903$0 , \port$897$0 , \port$891$0  };
+  assign dec_rdata = { \port$919$0 , \port$913$0 , \port$907$0 , \port$901$0  };
   assign m_axi_awaddr = \$7 [31:0];
   assign \$40  = { s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39], s2_y[39:17] };
-  assign \$100  = { s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26:7] };
-  assign \$108  = { 5'h00, \$107 [15:5] };
-  assign \$109  = { 3'h0, \$108 , 4'h0 };
-  assign \$110  = 1'h0;
-  assign \$111  = 1'h0;
-  assign \$112  = 1'h0;
-  assign \$113  = 1'h0;
-  assign \$114  = 13'h1fa4;
-  assign \$115  = 1'h0;
+  assign \$106  = { s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26], s1b_z[26:7] };
+  assign \$114  = { 5'h00, \$113 [15:5] };
+  assign \$115  = { 3'h0, \$114 , 4'h0 };
   assign \$116  = 1'h0;
   assign \$117  = 1'h0;
-  assign \$118  = 15'h5eea;
+  assign \$118  = 1'h0;
   assign \$119  = 1'h0;
-  assign \$120  = 1'h0;
+  assign \$120  = 13'h1fa4;
   assign \$121  = 1'h0;
-  assign \$122  = 15'h7e8c;
+  assign \$122  = 1'h0;
   assign \$123  = 1'h0;
-  assign \$124  = 1'h0;
+  assign \$124  = 15'h5eea;
   assign \$125  = 1'h0;
-  assign \$126  = 16'h9e30;
-  assign \$130  = 16'hbdd3;
-  assign \$134  = 16'hdd75;
-  assign \$137  = 8'had;
-  assign \$138  = 16'hfd19;
-  assign \$141  = 9'h161;
-  assign \$156  = 1'h0;
-  assign \$157  = 1'h0;
-  assign \$158  = 1'h0;
-  assign \$159  = 1'h0;
-  assign \$168  = 13'h1fa4;
-  assign \$169  = 1'h0;
-  assign \$170  = 1'h0;
-  assign \$171  = 1'h0;
-  assign \$180  = 14'h3f48;
-  assign \$181  = 1'h0;
-  assign \$182  = 1'h0;
-  assign \$183  = 1'h0;
-  assign \$192  = 15'h5eec;
-  assign \$193  = 1'h0;
-  assign \$194  = 1'h0;
-  assign \$195  = 1'h0;
-  assign \$204  = 15'h7e90;
-  assign \$205  = 1'h0;
-  assign \$206  = 1'h0;
-  assign \$207  = 1'h0;
-  assign \$216  = 16'h9e34;
-  assign \$228  = 16'hbdd8;
-  assign \$231  = 1'h0;
-  assign \$240  = 16'hdd7c;
-  assign \$243  = 8'hb4;
+  assign \$126  = 1'h0;
+  assign \$127  = 1'h0;
+  assign \$128  = 15'h7e8c;
+  assign \$129  = 1'h0;
+  assign \$130  = 1'h0;
+  assign \$131  = 1'h0;
+  assign \$132  = 16'h9e30;
+  assign \$136  = 16'hbdd3;
+  assign \$140  = 16'hdd75;
+  assign \$143  = 8'had;
+  assign \$144  = 16'hfd19;
+  assign \$147  = 9'h161;
+  assign \$162  = 1'h0;
+  assign \$163  = 1'h0;
+  assign \$164  = 1'h0;
+  assign \$165  = 1'h0;
+  assign \$174  = 13'h1fa4;
+  assign \$175  = 1'h0;
+  assign \$176  = 1'h0;
+  assign \$177  = 1'h0;
+  assign \$186  = 14'h3f48;
+  assign \$187  = 1'h0;
+  assign \$188  = 1'h0;
+  assign \$189  = 1'h0;
+  assign \$198  = 15'h5eec;
+  assign \$199  = 1'h0;
+  assign \$200  = 1'h0;
+  assign \$201  = 1'h0;
+  assign \$210  = 15'h7e90;
+  assign \$211  = 1'h0;
+  assign \$212  = 1'h0;
+  assign \$213  = 1'h0;
+  assign \$222  = 16'h9e34;
+  assign \$234  = 16'hbdd8;
+  assign \$237  = 1'h0;
+  assign \$246  = 16'hdd7c;
+  assign \$249  = 8'hb4;
 endmodule
 
 (* generator = "Amaranth" *)
