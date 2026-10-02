@@ -23,6 +23,16 @@ LLR = clamp(((z >> 7) kq + 2^16) >> 17, +-31), bits 2 j (from the I
 axis) and 2 j + 1, and writes each byte where the decoder's layout has
 that variable (the info part natural; the parity bit p = c q + r at word
 k / 4 + 90 r + c / 4, byte c % 4). `load_only`: no decode (tests).
+
+DVB-S2 (trxd dvbs2/s2cells.rs, bit for bit): QPSK long frames are the
+QPSK cells above, unrotated (bit 2 j from I, 2 j + 1 from Q). With
+`psk8` (8PSK, rate 3/4) the cells are the frame's 21600 data symbols,
+derotated and descrambled; three LLRs a cell, max-log: with the eight
+correlations c_a = I cos(a pi/4) + Q sin(a pi/4) in Q14 (16384 and 11585
+for 1/sqrt 2), bit m's z = max c over the points whose label has bit m 0
+minus max over those with it 1 (labels to angles: dvbs2 PSK8_PHASE
+1 0 4 5 2 7 3 6), then the LLR as above; bit m of cell j is codeword
+variable m 21600 + j (the 3-column bit interleaver).
 """
 
 from amaranth import *
@@ -31,6 +41,7 @@ from amaranth.lib.fifo import SyncFIFOBuffered
 
 from . import axi
 from .ldpc_dec import RATES, N
+from .s2front import S2Front
 
 BURST = 16
 FIFO = 64
@@ -40,7 +51,7 @@ class LdpcDma(Elaboratable):
     def __init__(self):
         self.in_addr = Signal(32)
         self.out_addr = Signal(32)
-        self.in_words = Signal(15)
+        self.in_words = Signal(16)
         self.out_words = Signal(12)
         self.go = Signal()
         self.busy = Signal()
@@ -62,6 +73,21 @@ class LdpcDma(Elaboratable):
         # column-twist bit deinterleaver
         self.qam16 = Signal()
         self.a14 = Signal(20)
+        # DVB-S2 8PSK: three LLRs a cell, max-log, the 3-column deinterleaver
+        self.psk8 = Signal()
+        # DVB-S2 long frames from the receive ring (s2front.py): the words in
+        # are ring symbols from in_addr (wrapping at ring_end to ring_start),
+        # the first `lead` dropped; QPSK (32400 cells) or psk8 (21600)
+        self.ring = Signal()
+        self.ring_start = Signal(32)
+        self.ring_end = Signal(32)
+        self.lead = Signal(5)
+        self.pilots = Signal()
+        self.gain = Signal(17)
+        self.seg_we = Signal()
+        self.seg_addr = Signal(5)
+        self.seg_angle = Signal(32)
+        self.seg_step = Signal(32)
         # sticky: a read or write burst was answered with an error response
         # (SLVERR/DECERR: a bad address), cleared by go
         self.axi_err = Signal()
@@ -83,7 +109,7 @@ class LdpcDma(Elaboratable):
         # ---- load: bursts into a FIFO, two decoder words a beat
         m.submodules.fifo = fifo = SyncFIFOBuffered(width=64, depth=FIFO)
         r_addr = Signal(32)
-        r_left = Signal(14)            # beats still to request
+        r_left = Signal(15)            # beats still to request
         outstanding = Signal(8)
         ar_pending = Signal()
         loading = Signal()
@@ -100,7 +126,10 @@ class LdpcDma(Elaboratable):
         with m.If(issue):
             m.d.sync += ar_pending.eq(1)
         with m.If(ar_pending & a.arready):
-            m.d.sync += [ar_pending.eq(0), r_addr.eq(r_addr + BURST * 8),
+            nxt_addr = Signal(32)
+            m.d.comb += nxt_addr.eq(r_addr + BURST * 8)
+            m.d.sync += [ar_pending.eq(0),
+                         r_addr.eq(Mux(self.ring & (nxt_addr == self.ring_end), self.ring_start, nxt_addr)),
                          r_left.eq(Mux(r_left > BURST, r_left - BURST, 0))]
 
         # ---- the decisions, packed, in a 64-bit buffer for the write bursts
@@ -132,14 +161,26 @@ class LdpcDma(Elaboratable):
             m.d.sync += self.axi_err.eq(1)
 
         # ---- cells -> LLRs (4 stages) -> the decoder RAM, a byte a cycle
+        # (the FIFO's read enable: the engine's own, or the ring front's)
+        own_ren = Signal()
+        m.submodules.front = front = S2Front()
+        m.d.comb += [front.start.eq(self.go), front.lead.eq(self.lead), front.pilots.eq(self.pilots),
+                     front.gain.eq(self.gain), front.seg_we.eq(self.seg_we),
+                     front.seg_addr.eq(self.seg_addr), front.seg_angle.eq(self.seg_angle),
+                     front.seg_step.eq(self.seg_step), front.beat.eq(fifo.r_data),
+                     front.beat_rdy.eq(fifo.r_rdy & self.ring),
+                     fifo.r_en.eq(Mux(self.ring, front.beat_en, own_ren))]
         n_cells = Signal(16)
-        m.d.comb += n_cells.eq(Cat(C(0, 1), self.in_words))
+        m.d.comb += n_cells.eq(Mux(self.ring, Mux(self.psk8, N // 3, N // 2), Cat(C(0, 1), self.in_words)))
+        m.d.comb += front.n_cells.eq(n_cells)
         cq = Signal(2)                 # cell in the FIFO's 64-bit word
         cell_av = Signal()
         cell = Signal(16)
         cell_take = Signal()
-        m.d.comb += [cell_av.eq(fifo.r_rdy), cell.eq(fifo.r_data.word_select(cq, 16))]
-        with m.If(cell_take):
+        m.d.comb += [cell_av.eq(Mux(self.ring, front.cell_rdy, fifo.r_rdy)),
+                     cell.eq(Mux(self.ring, front.cell, fifo.r_data.word_select(cq, 16))),
+                     front.cell_en.eq(cell_take & self.ring)]
+        with m.If(cell_take & ~self.ring):
             m.d.sync += cq.eq(cq + 1)
         cur_i = Signal(signed(8))
         cur_q = Signal(signed(8))
@@ -245,10 +286,81 @@ class LdpcDma(Elaboratable):
                     with m.Else():
                         m.d.comb += [q_addr.eq(k_c[2:] + col_t90[e] + col_s[e][2:]),
                                      q_byte.eq(col_s[e][:2])]
+        # 8PSK: three column counters (column m holds variables m 21600 ..):
+        # the info part natural, past K parity bit p = position - K (no
+        # parity interleaving in DVB-S2) as p = c q + r, the decoder's word
+        # K / 4 + 90 r + c / 4, byte c % 4 (a column may cross K; rate 3/4:
+        # columns 0 and 1 are info, column 2 starts at 43200 < K)
+        PROWS = 21600
+        p_pos = [Signal(17, name=f'p_pos{e}') for e in range(3)]
+        p_r = [Signal(7, name=f'p_r{e}') for e in range(3)]
+        p_r90 = [Signal(14, name=f'p_r90{e}') for e in range(3)]
+        p_c = [Signal(9, name=f'p_c{e}') for e in range(3)]
+
+        def p_load():
+            st = []
+            for e in range(3):
+                st += [p_pos[e].eq(e * PROWS), p_r[e].eq(0), p_r90[e].eq(0), p_c[e].eq(0)]
+            return st
+
+        def p_advance(e):
+            m.d.sync += p_pos[e].eq(p_pos[e] + 1)
+            with m.If(p_pos[e] >= k_c):
+                with m.If(p_r[e] == q_c - 1):
+                    m.d.sync += [p_r[e].eq(0), p_r90[e].eq(0), p_c[e].eq(p_c[e] + 1)]
+                with m.Else():
+                    m.d.sync += [p_r[e].eq(p_r[e] + 1), p_r90[e].eq(p_r90[e] + 90)]
+
+        p_addr = Signal(14)
+        p_byte = Signal(2)
+        with m.Switch(ph):
+            for e in range(3):
+                with m.Case(e):
+                    with m.If(p_pos[e] < k_c):
+                        m.d.comb += [p_addr.eq(p_pos[e][2:]), p_byte.eq(p_pos[e][:2])]
+                    with m.Else():
+                        m.d.comb += [p_addr.eq(k_c[2:] + p_r90[e] + p_c[e][2:]),
+                                     p_byte.eq(p_c[e][:2])]
         tgt_addr = Signal(14)
         tgt_byte = Signal(2)
-        m.d.comb += [tgt_addr.eq(Mux(self.qam16, q_addr, t_addr)),
-                     tgt_byte.eq(Mux(self.qam16, q_byte, t_byte))]
+        m.d.comb += [tgt_addr.eq(Mux(self.psk8, p_addr, Mux(self.qam16, q_addr, t_addr))),
+                     tgt_byte.eq(Mux(self.psk8, p_byte, Mux(self.qam16, q_byte, t_byte)))]
+
+        # 8PSK: the eight correlations of the current cell (registered in
+        # C_NEXT), then the three bits' max-log z (registered in C_PREP)
+        K14, H14 = 16384, 11585
+        corr = [Signal(signed(24), name=f'corr{a}') for a in range(8)]
+        ci = Signal(signed(9))
+        cqq = Signal(signed(9))
+        m.d.comb += [ci.eq(cur_i), cqq.eq(cur_q)]
+        m.d.sync += [corr[0].eq(ci * K14), corr[1].eq((ci + cqq) * H14),
+                     corr[2].eq(cqq * K14), corr[3].eq((cqq - ci) * H14),
+                     corr[4].eq(-ci * K14), corr[5].eq(-(ci + cqq) * H14),
+                     corr[6].eq(-cqq * K14), corr[7].eq((ci - cqq) * H14)]
+        PHASE = [1, 0, 4, 5, 2, 7, 3, 6]
+
+        def cmax(xs):
+            while len(xs) > 1:
+                nx = []
+                for i_ in range(0, len(xs), 2):
+                    a_, b_ = xs[i_], xs[i_ + 1]
+                    mx = Signal(signed(24))
+                    m.d.comb += mx.eq(Mux(a_ > b_, a_, b_))
+                    nx.append(mx)
+                xs = nx
+            return xs[0]
+
+        pz = [Signal(signed(26), name=f'pz{b}') for b in range(3)]
+        for b in range(3):
+            mask = 4 >> b
+            z0 = cmax([corr[PHASE[v]] for v in range(8) if v & mask == 0])
+            z1 = cmax([corr[PHASE[v]] for v in range(8) if v & mask])
+            m.d.sync += pz[b].eq(z0 - z1)
+        pz_sel = Signal(signed(26))
+        with m.Switch(ph):
+            for b in range(3):
+                with m.Case(b):
+                    m.d.comb += pz_sel.eq(pz[b])
 
         issue = Signal()
         # stage 1: the rotated axis value (1b: 16QAM |z| - a); 2: x kq;
@@ -260,7 +372,9 @@ class LdpcDma(Elaboratable):
         s1_z = Signal(signed(26))
         s1_addr = Signal(14)
         s1_byte = Signal(2)
-        with m.If(~self.rot):
+        with m.If(self.psk8):
+            m.d.sync += s1_z.eq(pz_sel)
+        with m.Elif(~self.rot):
             m.d.sync += s1_z.eq(Mux(ph[0], a_q, a_i) * 16384)
         with m.Elif(~ph[0]):
             m.d.sync += s1_z.eq(a_i * self.c14 - a_q * self.s14)
@@ -311,9 +425,9 @@ class LdpcDma(Elaboratable):
             with m.State('C_FIRST'):
                 m.d.comb += self.busy.eq(1)
                 # (dec_rate is set with go: the column counters from here)
-                m.d.sync += col_load(col_init)
+                m.d.sync += col_load(col_init) + p_load()
                 with m.If(cell_av):
-                    m.d.comb += [cell_take.eq(1), fifo.r_en.eq(cq == 3)]
+                    m.d.comb += [cell_take.eq(1), own_ren.eq(cq == 3)]
                     m.d.sync += [cur_i.eq(cell[:8]), cur_q.eq(cell[8:]), first_q.eq(cell[8:])]
                     m.next = 'C_NEXT'
             # the next cell (the last one's rotation takes the first's Q)
@@ -321,11 +435,22 @@ class LdpcDma(Elaboratable):
                 m.d.comb += self.busy.eq(1)
                 with m.If(jc + 1 == n_cells):
                     m.d.sync += nq.eq(first_q)
-                    m.next = 'C_LLR'
+                    with m.If(self.psk8):
+                        m.next = 'C_PREP'
+                    with m.Else():
+                        m.next = 'C_LLR'
                 with m.Elif(cell_av):
-                    m.d.comb += [cell_take.eq(1), fifo.r_en.eq(cq == 3)]
+                    m.d.comb += [cell_take.eq(1), own_ren.eq(cq == 3)]
                     m.d.sync += [nxt_i.eq(cell[:8]), nxt_q.eq(cell[8:]), nq.eq(cell[8:])]
-                    m.next = 'C_LLR'
+                    with m.If(self.psk8):
+                        m.next = 'C_PREP'
+                    with m.Else():
+                        m.next = 'C_LLR'
+            # 8PSK: the correlations of this cell were registered in C_NEXT;
+            # here the three bits' z (max-log), so C_LLR has them
+            with m.State('C_PREP'):
+                m.d.comb += self.busy.eq(1)
+                m.next = 'C_LLR'
             # two LLRs of cell jc into the pipeline, one a cycle
             with m.State('C_LLR'):
                 m.d.comb += [self.busy.eq(1), issue.eq(1)]
@@ -336,7 +461,12 @@ class LdpcDma(Elaboratable):
                     with m.Else():
                         m.d.sync += [pr.eq(pr + 1), pr90.eq(pr90 + 90)]
                 cell_end = Signal()
-                m.d.comb += cell_end.eq(Mux(self.qam16, ph == 3, ph == 1))
+                m.d.comb += cell_end.eq(Mux(self.psk8, ph == 2, Mux(self.qam16, ph == 3, ph == 1)))
+                with m.If(self.psk8):
+                    with m.Switch(ph):
+                        for e in range(3):
+                            with m.Case(e):
+                                p_advance(e)
                 with m.If(self.qam16 & (ph == 3) & jc[0]):
                     col_advance()
                 with m.If(cell_end):
@@ -349,7 +479,7 @@ class LdpcDma(Elaboratable):
             with m.State('C_DRAIN'):
                 m.d.comb += self.busy.eq(1)
                 with m.If(fifo.r_rdy):
-                    m.d.comb += fifo.r_en.eq(1)          # past the block: drop
+                    m.d.comb += own_ren.eq(1)          # past the block: drop
                 with m.If(~llr_pipe & (r_left == 0) & ~ar_pending & (outstanding == 0) & ~fifo.r_rdy):
                     m.d.sync += loading.eq(0)
                     m.next = 'C_DONE'
@@ -363,10 +493,10 @@ class LdpcDma(Elaboratable):
                 m.d.comb += self.busy.eq(1)
                 with m.If(fifo.r_rdy & (w < self.in_words)):
                     m.d.comb += [self.dec_addr.eq(w), self.dec_wdata.eq(fifo.r_data.word_select(half, 32)),
-                                 self.dec_we.eq(0xF), fifo.r_en.eq(half)]
+                                 self.dec_we.eq(0xF), own_ren.eq(half)]
                     m.d.sync += [w.eq(w + 1), half.eq(~half)]
                 with m.Elif(fifo.r_rdy & (w >= self.in_words)):
-                    m.d.comb += fifo.r_en.eq(1)          # past the end: drop
+                    m.d.comb += own_ren.eq(1)          # past the end: drop
                 with m.If((w >= self.in_words) & (r_left == 0) & ~ar_pending & (outstanding == 0)
                           & ~fifo.r_rdy):
                     m.d.sync += loading.eq(0)

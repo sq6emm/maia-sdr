@@ -81,6 +81,25 @@ def llr16_model(cells, rot, kq, c14, s14, a14, rate):
     return out
 
 
+def psk8_model(cells, kq):
+    """trxd dvbs2/s2cells.rs: DVB-S2 8PSK cells -> codeword-order LLRs."""
+    def q(z):
+        y = ((z >> 7) * kq + (1 << 16)) >> 17
+        return max(-31, min(31, y))
+    phase = [1, 0, 4, 5, 2, 7, 3, 6]
+    rows = len(cells)
+    out = [0] * (3 * rows)
+    for j, (i_, q_) in enumerate(cells):
+        c = [i_ * 16384, (i_ + q_) * 11585, q_ * 16384, (q_ - i_) * 11585,
+             -i_ * 16384, -(i_ + q_) * 11585, -q_ * 16384, (i_ - q_) * 11585]
+        for b in range(3):
+            mask = 4 >> b
+            z0 = max(c[phase[v]] for v in range(8) if not v & mask)
+            z1 = max(c[phase[v]] for v in range(8) if v & mask)
+            out[b * rows + j] = q(z0 - z1)
+    return out
+
+
 def ddr_words(words, base):
     ddr = {}
     for n in range(0, len(words), 2):
@@ -158,6 +177,78 @@ class TestLdpcDma(unittest.TestCase):
                 bad = np.nonzero(np.array(got['ram']) != want)[0]
                 self.assertEqual(len(bad), 0, f'{len(bad)} RAM words differ, first at {bad[:5]}: '
                                  f'{[hex(got["ram"][i]) for i in bad[:2]]} want {[hex(want[i]) for i in bad[:2]]}')
+
+    def test_cells_psk8(self):
+        """DVB-S2 8PSK 3/4: three LLRs a cell (max-log) through the 3-column
+        deinterleaver, against trxd's model (load only); full-scale and
+        -128 cells included."""
+        rate = 1
+        rng = np.random.default_rng(11)
+        cells = [(int(a), int(b)) for a, b in rng.integers(-128, 128, (N // 3, 2))]
+        cells[:4] = [(127, 127), (-128, -128), (-128, 127), (0, 0)]
+        kq = 4093
+        llr = psk8_model(cells, kq)
+        wd, by = cpu_layout(rate)
+        want = np.zeros(N // 4, dtype=np.int64)
+        for v in range(N):
+            want[wd[v]] |= (llr[v] & 0xFF) << (8 * by[v])
+        words = [(cells[j][0] & 0xFF) | (cells[j][1] & 0xFF) << 8
+                 | (cells[j + 1][0] & 0xFF) << 16 | (cells[j + 1][1] & 0xFF) << 24
+                 for j in range(0, N // 3, 2)]
+        got = self.run_dut(ddr_words(words, IN), len(words), rate, 0,
+                           [(0xFF20, 1 | 4 | 16), (0xFF24, kq)], read_ram=True)
+        bad = np.nonzero(np.array(got['ram']) != want)[0]
+        self.assertEqual(len(bad), 0, f'{len(bad)} RAM words differ, first at {bad[:5]}: '
+                         f'{[hex(got["ram"][i]) for i in bad[:2]]} want {[hex(want[i]) for i in bad[:2]]}')
+
+    def ring_case(self, psk8, pilots, seed):
+        """DVB-S2 long frames from the receive ring (s2front.py): a frame
+        wrapping at the ring's end, a lead, the segment table; the RAM
+        against trxd's model (s2ring.rs, here s2front.model_cells) and the
+        cell LLRs (load only)."""
+        from maia_hdl.s2front import model_cells, GROUP, PILOT
+        rng = np.random.default_rng(seed)
+        ring_start, ring_words = 0x1610_0000, 0x10000          # 256 KiB
+        ring_end = ring_start + 4 * ring_words
+        n_cells = N // 3 if psk8 else N // 2
+        groups = -(-n_cells // GROUP)
+        nsym = n_cells + (groups - 1) * PILOT if pilots else n_cells
+        lead = int(rng.integers(0, 32))
+        first = ring_words - 8192 + lead                        # wraps
+        words = [0] * ring_words
+        # symbols of about 4000 (and a few at full scale)
+        amp = rng.normal(0, 4000, (ring_words, 2)).round().astype(int)
+        amp[first % ring_words: first % ring_words + 4] = [[32767, 32767], [-32768, -32768], [-32768, 32767], [0, 0]]
+        for k in range(ring_words):
+            re, im = (max(-32768, min(32767, int(v))) for v in amp[k])
+            words[k] = (re & 0xFFFF) | (im & 0xFFFF) << 16
+        frame = [words[(first + j) % ring_words] for j in range(nsym)]
+        segs = [(int(rng.integers(0, 1 << 32)), int(rng.integers(-(1 << 22), 1 << 22))) for _ in range(groups)]
+        gain = 10170
+        cells = model_cells(frame, n_cells, pilots, segs, gain)
+        kq = 4093 if psk8 else 2931
+        llr = psk8_model(cells, kq) if psk8 else llr_model(cells, False, kq, 0, 0)
+        rate = 1 if psk8 else 0
+        wd, by = cpu_layout(rate)
+        want = np.zeros(N // 4, dtype=np.int64)
+        for v in range(N):
+            want[wd[v]] |= (llr[v] & 0xFF) << (8 * by[v])
+        in_addr = ring_start + 4 * (first - lead)
+        regs = [(0xFF10, in_addr), (0xFF20, 1 | 4 | (16 if psk8 else 0) | 32), (0xFF24, kq),
+                (0xFF34, ring_start), (0xFF38, ring_end),
+                (0xFF3C, gain | lead << 24 | int(pilots) << 31)]
+        for i, (a_, b_) in enumerate(segs):
+            regs += [(0xFF40, a_), (0xFF44, b_ & 0xFFFFFFFF), (0xFF48, i)]
+        got = self.run_dut(ddr_words(words, ring_start), lead + nsym, rate, 0, regs, read_ram=True)
+        bad = np.nonzero(np.array(got['ram']) != want)[0]
+        self.assertEqual(len(bad), 0, f'{len(bad)} RAM words differ, first at {bad[:5]}: '
+                         f'{[hex(got["ram"][i]) for i in bad[:2]]} want {[hex(want[i]) for i in bad[:2]]}')
+
+    def test_ring_psk8(self):
+        self.ring_case(True, True, 21)
+
+    def test_ring_qpsk(self):
+        self.ring_case(False, True, 22)
 
     def check_decode(self, case, ddr, in_words, regs):
         res = self.run_dut(ddr, in_words, case['rate'], case['max_iter'], regs)

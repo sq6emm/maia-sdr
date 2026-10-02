@@ -22,11 +22,22 @@
   128-aligned), 0xFF18 words in (<= 16200), 0xFF1C words out (multiple of
   32, <= 2048); 0xFF20 bit 0: the words are DVB-T2 QPSK cells (the engine
   makes the LLRs, ldpc_dma.py), bit 1 rotated, bit 2 load only (tests),
-  bit 3 16QAM (four LLRs a cell and the bit deinterleaver, id "LDP6");
-  0xFF24 kq; 0xFF28 c14 (15:0), s14 (31:16); 0xFF2C a14 (16QAM level).
+  bit 3 16QAM (four LLRs a cell and the bit deinterleaver, id "LDP6"),
+  bit 4 DVB-S2 8PSK cells (three LLRs a cell, max-log, the 3-column
+  deinterleaver; features bit 3);
+  bit 5 DVB-S2 long frames from the receive ring (s2front.py: the words
+  in are ring symbols from 0xFF10, wrapping at 0xFF38 to 0xFF34; 0xFF18
+  counts them with the lead; features bit 4);
+  0xFF24 kq; 0xFF28 c14 (15:0), s14 (31:16); 0xFF2C a14 (16QAM level);
+  0xFF34 ring start, 0xFF38 ring end (bytes, 128-aligned); 0xFF3C gain G
+  (16:0), lead (28:24: words before the frame's first symbol), bit 31
+  pilots; 0xFF40 segment angle, 0xFF44 segment step (32 bits a turn),
+  0xFF48 W: write them into the segment table at entry (4:0).
   0xFF30 features R: bit 0 the finished counter in status 31:24, bit 1 the
                    AXI error bit, bit 2 configuration writes ignored while
-                   busy (0 on older cores: the register reads 0).
+                   busy, bit 3 DVB-S2 8PSK cells (0xFF20 bit 4), bit 4
+                   DVB-S2 frames from the ring (0xFF20 bit 5) (0 on older
+                   cores: the register reads 0).
 
 Writes to the configuration registers (0xFF00 rate/iterations and
 0xFF10-0xFF2C) are ignored while the decoder or the DDR engine is busy, as
@@ -144,7 +155,9 @@ class LdpcAxi(Elaboratable):
                                     m.d.sync += [dma.cells.eq(self.s_axi_wdata[0]),
                                                  dma.rot.eq(self.s_axi_wdata[1]),
                                                  dma.load_only.eq(self.s_axi_wdata[2]),
-                                                 dma.qam16.eq(self.s_axi_wdata[3])]
+                                                 dma.qam16.eq(self.s_axi_wdata[3]),
+                                                 dma.psk8.eq(self.s_axi_wdata[4]),
+                                                 dma.ring.eq(self.s_axi_wdata[5])]
                                 with m.Case(0x24):
                                     m.d.sync += dma.kq.eq(self.s_axi_wdata)
                                 with m.Case(0x28):
@@ -152,6 +165,20 @@ class LdpcAxi(Elaboratable):
                                                  dma.s14.eq(self.s_axi_wdata[16:])]
                                 with m.Case(0x2C):
                                     m.d.sync += dma.a14.eq(self.s_axi_wdata[:20])
+                                with m.Case(0x34):
+                                    m.d.sync += dma.ring_start.eq(self.s_axi_wdata)
+                                with m.Case(0x38):
+                                    m.d.sync += dma.ring_end.eq(self.s_axi_wdata)
+                                with m.Case(0x3C):
+                                    m.d.sync += [dma.gain.eq(self.s_axi_wdata[:17]),
+                                                 dma.lead.eq(self.s_axi_wdata[24:29]),
+                                                 dma.pilots.eq(self.s_axi_wdata[31])]
+                                with m.Case(0x40):
+                                    m.d.sync += dma.seg_angle.eq(self.s_axi_wdata)
+                                with m.Case(0x44):
+                                    m.d.sync += dma.seg_step.eq(self.s_axi_wdata)
+                                with m.Case(0x48):
+                                    m.d.comb += [dma.seg_we.eq(1), dma.seg_addr.eq(self.s_axi_wdata[:5])]
                     with m.Elif(~busy):
                         m.d.comb += [dec.cpu_addr.eq(self.s_axi_awaddr[2:]),
                                      dec.cpu_wdata.eq(self.s_axi_wdata),
@@ -171,7 +198,8 @@ class LdpcAxi(Elaboratable):
                         with m.Case(0x08):
                             m.d.sync += rd_regval.eq(self.id)
                         with m.Case(0x30):
-                            m.d.sync += rd_regval.eq(0b101 | ((1 if dma else 0) << 1))
+                            m.d.sync += rd_regval.eq(0b101 | ((1 if dma else 0) << 1) | ((1 if dma else 0) << 3)
+                                                     | ((1 if dma else 0) << 4))
                         with m.Default():
                             m.d.sync += rd_regval.eq(0)
                     m.d.comb += [dec.cpu_addr.eq(self.s_axi_araddr[2:]),
