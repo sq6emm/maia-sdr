@@ -64,12 +64,17 @@ def maia_iio_lite_t2():
 
 def maia_iio_lite_trx():
     """tezuka_fw_simple mode bitstream "trx": the spectrometer (wide scope)
-    only. Platform 0xD6: trxd leaves the recorder alone (0xD5 only)."""
+    and the DDC as the radio's channel front end (NCO + decimation of the
+    ADC stream to the 48 kHz channel, recorded into the 1 MiB ring next to
+    the spectrometer buffers). Platform 0xD7: trxd's trx mode reads the
+    channel from the ring (0xD6 was the spectrometer alone; 0xD5 is the
+    DVB-S2 front end's ring)."""
     config = MaiaSDRConfig()
     config.spectrometer_address = 0x1600_0000
     config.recorder_address_range = (0x1610_0000, 0x1620_0000)
     config.recorder_ring = True
-    config.platform = 0xD6
+    config.recorder_from_ddc = True
+    config.platform = 0xD7
     config.Enable_RawFFT = False
     return config
 
