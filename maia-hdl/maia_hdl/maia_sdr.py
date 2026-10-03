@@ -25,6 +25,7 @@ from .recorder import Recorder16IQ, RecorderMode
 from .spectrometer import Spectrometer
 from .symsync import SymSync
 from .hdrdet import HdrDet
+from .s2trk import S2Trk, FEATURE as S2TRK_FEATURE, ENTRY_WORDS as S2TRK_WORDS
 from .t2resamp import T2Resampler
 from .t2ofdm import T2Ofdm
 from .topfft import TopFFT
@@ -44,7 +45,10 @@ class MaiaSDR(Elaboratable):
         # The DATV cores add a second 16-word window (0x40..0x7F): the
         # DVB-T2 front end's registers.
         self.has_t2 = config.datv_symsync and config.datv_t2
-        self.axi4_awidth = 5 if self.has_t2 else 4
+        # (or, without T2, the S2 tracker's: s2trk.py)
+        self.has_s2trk = (config.datv_symsync and config.datv_s2
+                          and config.datv_s2trk and not self.has_t2)
+        self.axi4_awidth = 5 if self.has_t2 or self.has_s2trk else 4
         self.s_axi_lite = ClockDomain()
         self.sampling = ClockDomain()
         # A clock domain called 'sync' is added to override the default
@@ -247,9 +251,54 @@ class MaiaSDR(Elaboratable):
                         ]),
                 } if config.datv_symsync else {}),
             }, 3)
-        if config.datv_symsync:
+        # (the S2 front end: not in the DVB-T2 mode bitstream)
+        self.has_s2 = config.datv_symsync and config.datv_s2
+        if self.has_s2:
             self.symsync = SymSync()
             self.hdrdet = HdrDet()
+        if self.has_s2trk:
+            self.s2trk = S2Trk()
+            self.s2trk_registers = Registers(
+                's2trk', {
+                    0b0000: Register('s2trk_control', [
+                        Field('enable', Access.RW, 1, 0),
+                        Field('load', Access.Wpulse, 1, 0),
+                        Field('pilots', Access.RW, 1, 0),
+                        Field('npil', Access.RW, 5, 0),
+                    ]),
+                    0b0001: Register('s2trk_base', [
+                        Field('base', Access.RW, 32, 0),
+                    ]),
+                    0b0010: Register('s2trk_len', [
+                        Field('frame_len', Access.RW, 17, 0),
+                    ]),
+                    0b0011: Register('s2trk_dth', [
+                        Field('dth', Access.RW, 32, 0),
+                    ]),
+                    0b0100: Register('s2trk_hdr', [
+                        Field('addr', Access.RW, 7, 0),
+                        Field('q', Access.RW, 2, 0),
+                        Field('we', Access.Wpulse, 1, 0),
+                    ]),
+                    **{0b0101 + i: Register(f's2trk_entry{i}', [
+                        Field('word', Access.R, 32, 0),
+                    ]) for i in range(S2TRK_WORDS)},
+                    0b1011: Register('s2trk_status', [
+                        Field('level', Access.R, 10, 0),
+                        Field('overflow', Access.R, 1, 0),
+                        Field('synced', Access.R, 1, 0),
+                    ]),
+                    0b1100: Register('s2trk_pop', [
+                        Field('pop', Access.Wpulse, 1, 0),
+                    ]),
+                    0b1101: Register('s2trk_counter', [
+                        Field('counter', Access.R, 32, 0),
+                    ]),
+                    # bit 16: the S2 tracker (T2's features are bits 7:0)
+                    0b1111: Register('s2trk_features', [
+                        Field('features', Access.R, 32, 0),
+                    ]),
+                }, 4)
         if self.has_t2:
             self.t2resamp = T2Resampler()
             self.t2ofdm = T2Ofdm()
@@ -315,6 +364,24 @@ class MaiaSDR(Elaboratable):
                         Field('symbols', Access.R, 16, 0),
                         Field('gbank_used', Access.R, 1, 0),
                     ]),
+                    # the P1 detector, guard-interval and MER reports
+                    # (t2p1.py, t2eq.py: records in the ring)
+                    0b1110: Register('t2_ext', [
+                        Field('p1_en', Access.RW, 1, 0),
+                        Field('p1_k', Access.RW, 8, 64),
+                        Field('acq_raw_off', Access.RW, 1, 0),
+                        Field('gi_raw_off', Access.RW, 1, 0),
+                        Field('mer_en', Access.RW, 1, 0),
+                        Field('eq_ring_j', Access.RW, 8, 0),
+                        Field('ref8', Access.RW, 10, 213),
+                    ]),
+                    # bit 0: P1 and GI reports; 1: MER reports; 2: eq_ring_j
+                    # (0 on bitstreams without them: the register is absent
+                    # there and reads 0)
+                    0b1111: Register('t2_features', [
+                        Field('features', Access.R, 8, 0),
+                        Field('p1_overflow', Access.R, 1, 0),
+                    ]),
                 }, 4)
         metadata = {
             'vendor': 'Daniel Estevez',
@@ -331,6 +398,7 @@ class MaiaSDR(Elaboratable):
             0x10: self.recorder_registers,
             0x20: self.sdr_registers,
             **({0x40: self.t2_registers} if self.has_t2 else {}),
+            **({0x40: self.s2trk_registers} if self.has_s2trk else {}),
         }, metadata)
 
         # DVB-T2: the equalizer's output words (the Maia clock), for the
@@ -431,6 +499,11 @@ class MaiaSDR(Elaboratable):
             m.submodules.t2_registers = self.t2_registers
             m.submodules.t2_registers_cdc = t2_registers_cdc = RegisterCDC(
                 's_axi_lite', 'sync', self.t2_registers.aw)
+        if self.has_s2trk:
+            # (the high window's registers: T2's or these; one name below)
+            m.submodules.s2trk_registers = self.s2trk_registers
+            m.submodules.s2trk_registers_cdc = t2_registers_cdc = RegisterCDC(
+                's_axi_lite', 'sync', self.s2trk_registers.aw)
 
         m.submodules.common_edge_2x = common_edge_2x = ClkNxCommonEdge(
             'sync', 'clk2x', 2)
@@ -662,27 +735,61 @@ class MaiaSDR(Elaboratable):
         ]
         # sync domain
         if self.config.recorder_from_ddc and self.config.datv_symsync:
-            m.submodules.symsync = symsync = self.symsync
-            m.submodules.hdrdet = hdrdet = self.hdrdet
-            m.d.comb += [
-                symsync.enable.eq(
-                    self.sdr_registers['datv_symsync']['enable']),
-                symsync.kp_shift.eq(
-                    self.sdr_registers['datv_symsync']['kp_shift']),
-                symsync.ki_shift.eq(
-                    self.sdr_registers['datv_symsync']['ki_shift']),
-                symsync.omega_nom.eq(
-                    self.sdr_registers['datv_omega']['omega']),
-                symsync.strobe_in.eq(self.ddc.strobe_out),
-                symsync.re_in.eq(self.ddc.re_out),
-                symsync.im_in.eq(self.ddc.im_out),
-                hdrdet.enable.eq(
-                    self.sdr_registers['datv_symsync']['enable']
-                    & self.sdr_registers['datv_symsync']['hdrdet']),
-                hdrdet.strobe_in.eq(symsync.strobe_out),
-                hdrdet.re_in.eq(symsync.re_out),
-                hdrdet.im_in.eq(symsync.im_out),
-            ]
+            # What the ring records outside DVB-T2: the S2 front end's
+            # output (header detector after symbol timing recovery), or the
+            # DDC's in the T2 mode bitstream (no S2 front end there).
+            s2_src = self.ddc
+            if self.has_s2:
+                s2_src = self.hdrdet
+            if self.has_s2:
+                m.submodules.symsync = symsync = self.symsync
+                m.submodules.hdrdet = hdrdet = self.hdrdet
+                m.d.comb += [
+                    symsync.enable.eq(
+                        self.sdr_registers['datv_symsync']['enable']),
+                    symsync.kp_shift.eq(
+                        self.sdr_registers['datv_symsync']['kp_shift']),
+                    symsync.ki_shift.eq(
+                        self.sdr_registers['datv_symsync']['ki_shift']),
+                    symsync.omega_nom.eq(
+                        self.sdr_registers['datv_omega']['omega']),
+                    symsync.strobe_in.eq(self.ddc.strobe_out),
+                    symsync.re_in.eq(self.ddc.re_out),
+                    symsync.im_in.eq(self.ddc.im_out),
+                    hdrdet.enable.eq(
+                        self.sdr_registers['datv_symsync']['enable']
+                        & self.sdr_registers['datv_symsync']['hdrdet']),
+                    hdrdet.strobe_in.eq(symsync.strobe_out),
+                    hdrdet.re_in.eq(symsync.re_out),
+                    hdrdet.im_in.eq(symsync.im_out),
+                ]
+            if self.has_s2trk:
+                # on the words the recorder writes into the ring
+                m.submodules.s2trk = trk = self.s2trk
+                tr = self.s2trk_registers
+                m.d.comb += [
+                    trk.enable.eq(tr['s2trk_control']['enable']),
+                    trk.load.eq(tr['s2trk_control']['load']),
+                    trk.pilots.eq(tr['s2trk_control']['pilots']),
+                    trk.npil.eq(tr['s2trk_control']['npil']),
+                    trk.base.eq(tr['s2trk_base']['base']),
+                    trk.frame_len.eq(tr['s2trk_len']['frame_len']),
+                    trk.dth.eq(tr['s2trk_dth']['dth']),
+                    trk.hdr_waddr.eq(tr['s2trk_hdr']['addr']),
+                    trk.hdr_wdata.eq(tr['s2trk_hdr']['q']),
+                    trk.hdr_we.eq(tr['s2trk_hdr']['we']),
+                    trk.pop.eq(tr['s2trk_pop']['pop']),
+                    trk.word.eq(self.recorder.word_out),
+                    trk.valid.eq(self.recorder.word_valid),
+                    trk.run_start.eq(self.recorder.run_start),
+                    tr['s2trk_status']['level'].eq(trk.level),
+                    tr['s2trk_status']['overflow'].eq(trk.overflow),
+                    tr['s2trk_status']['synced'].eq(trk.synced),
+                    tr['s2trk_counter']['counter'].eq(trk.counter),
+                    tr['s2trk_features']['features'].eq(S2TRK_FEATURE),
+                ] + [tr[f's2trk_entry{i}']['word'].eq(trk.entry[32 * i:32 * i + 32])
+                     for i in range(S2TRK_WORDS)]
+
             if self.has_t2:
                 m.submodules.t2resamp = t2resamp = self.t2resamp
                 t2 = self.sdr_registers['datv_symsync']['t2']
@@ -739,6 +846,15 @@ class MaiaSDR(Elaboratable):
                     t2r['t2_status']['frames'].eq(t2ofdm.frames),
                     t2r['t2_status']['overflow'].eq(t2ofdm.overflow),
                     t2r['t2_status']['resamp_overflow'].eq(t2resamp.overflow),
+                    t2ofdm.p1_en.eq(t2r['t2_ext']['p1_en']),
+                    t2ofdm.p1_k.eq(t2r['t2_ext']['p1_k']),
+                    t2ofdm.acq_raw_off.eq(t2r['t2_ext']['acq_raw_off']),
+                    t2ofdm.gi_raw_off.eq(t2r['t2_ext']['gi_raw_off']),
+                    t2ofdm.mer_en.eq(t2r['t2_ext']['mer_en']),
+                    t2ofdm.eq_ring_j.eq(t2r['t2_ext']['eq_ring_j']),
+                    t2ofdm.ref8.eq(t2r['t2_ext']['ref8']),
+                    t2r['t2_features']['features'].eq(0b111),
+                    t2r['t2_features']['p1_overflow'].eq(t2ofdm.p1_overflow),
                     t2ofdm.common_edge_3x.eq(common_edge_3x.common_edge),
                     t2ofdm.strobe_in.eq(t2resamp.strobe_out),
                     t2ofdm.re_in.eq(t2resamp.re_out),
@@ -758,15 +874,15 @@ class MaiaSDR(Elaboratable):
                     ]
                 with m.Else():
                     m.d.comb += [
-                        self.recorder.strobe_in.eq(hdrdet.strobe_out),
-                        self.recorder.re_in.eq(hdrdet.re_out),
-                        self.recorder.im_in.eq(hdrdet.im_out),
+                        self.recorder.strobe_in.eq(s2_src.strobe_out),
+                        self.recorder.re_in.eq(s2_src.re_out),
+                        self.recorder.im_in.eq(s2_src.im_out),
                     ]
             else:
                 m.d.comb += [
-                    self.recorder.strobe_in.eq(hdrdet.strobe_out),
-                    self.recorder.re_in.eq(hdrdet.re_out),
-                    self.recorder.im_in.eq(hdrdet.im_out),
+                    self.recorder.strobe_in.eq(s2_src.strobe_out),
+                    self.recorder.re_in.eq(s2_src.re_out),
+                    self.recorder.im_in.eq(s2_src.im_out),
                 ]
         elif self.config.recorder_from_ddc:
             m.d.comb += [
@@ -825,7 +941,7 @@ class MaiaSDR(Elaboratable):
         # TODO: convert all of this into a RegisterCrossbar module
         address = Signal(self.axi4_awidth, reset_less=True)
         wdata = Signal(32, reset_less=True)
-        if self.has_t2:
+        if self.has_t2 or self.has_s2trk:
             high = self.axi4lite.address[4]
             t2_regs_select = high
         else:
@@ -840,17 +956,20 @@ class MaiaSDR(Elaboratable):
                                    | self.recorder_registers.rdata
                                    | sdr_registers_cdc.i_rdata
                                    | (t2_registers_cdc.i_rdata
-                                      if self.has_t2 else 0)),
+                                      if self.has_t2 or self.has_s2trk
+                                      else 0)),
             self.axi4lite.rdone.eq(self.control_registers.rdone
                                    | self.recorder_registers.rdone
                                    | sdr_registers_cdc.i_rdone
                                    | (t2_registers_cdc.i_rdone
-                                      if self.has_t2 else 0)),
+                                      if self.has_t2 or self.has_s2trk
+                                      else 0)),
             self.axi4lite.wdone.eq(self.control_registers.wdone
                                    | self.recorder_registers.wdone
                                    | sdr_registers_cdc.i_wdone
                                    | (t2_registers_cdc.i_wdone
-                                      if self.has_t2 else 0)),
+                                      if self.has_t2 or self.has_s2trk
+                                      else 0)),
             self.control_registers.ren.eq(
                 self.axi4lite.ren & control_regs_select),
             self.control_registers.wstrobe.eq(
@@ -866,7 +985,9 @@ class MaiaSDR(Elaboratable):
             address.eq(self.axi4lite.address),
             wdata.eq(self.axi4lite.wdata),
         ]
-        if self.has_t2:
+        if self.has_t2 or self.has_s2trk:
+            high_regs = (self.t2_registers if self.has_t2
+                         else self.s2trk_registers)
             m.d.s_axi_lite += [
                 t2_registers_cdc.i_ren.eq(self.axi4lite.ren & t2_regs_select),
                 t2_registers_cdc.i_wstrobe.eq(
@@ -875,13 +996,13 @@ class MaiaSDR(Elaboratable):
             m.d.comb += [
                 t2_registers_cdc.i_address.eq(address),
                 t2_registers_cdc.i_wdata.eq(wdata),
-                self.t2_registers.ren.eq(t2_registers_cdc.o_ren),
-                self.t2_registers.wstrobe.eq(t2_registers_cdc.o_wstrobe),
-                self.t2_registers.address.eq(t2_registers_cdc.o_address),
-                self.t2_registers.wdata.eq(t2_registers_cdc.o_wdata),
-                t2_registers_cdc.o_rdone.eq(self.t2_registers.rdone),
-                t2_registers_cdc.o_wdone.eq(self.t2_registers.wdone),
-                t2_registers_cdc.o_rdata.eq(self.t2_registers.rdata),
+                high_regs.ren.eq(t2_registers_cdc.o_ren),
+                high_regs.wstrobe.eq(t2_registers_cdc.o_wstrobe),
+                high_regs.address.eq(t2_registers_cdc.o_address),
+                high_regs.wdata.eq(t2_registers_cdc.o_wdata),
+                t2_registers_cdc.o_rdone.eq(high_regs.rdone),
+                t2_registers_cdc.o_wdone.eq(high_regs.wdone),
+                t2_registers_cdc.o_rdata.eq(high_regs.rdata),
             ]
         m.d.comb += [
             self.control_registers.address.eq(address),

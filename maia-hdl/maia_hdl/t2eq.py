@@ -134,6 +134,23 @@ class Model:
         idx = (phase >> (32 - LUT_BITS)) & (2**LUT_BITS - 1)
         return self.cos[idx], self.sin[idx]
 
+    def mer_terms(self, j, cells, regs, ref8=213):
+        """The MER sum's terms of symbol j's cells (1705 (I, Q) by k): per
+        scattered pilot (8 I - s ref8)^2 + (8 Q)^2; (sum, count)."""
+        dx, dy = regs['dx'], regs['dy']
+        if j == regs['fc_j']:
+            d, k0 = dx, 0
+        else:
+            d, k0 = dx * dy, dx * (j & (dy - 1))
+        tot, n = 0, 0
+        for k in range(k0, CARRIERS, d):
+            neg = self.prbs[k] ^ self.pn[j & 255]
+            ci, cq = cells[k]
+            r = 8 * ci - (-ref8 if neg else ref8)
+            tot += r * r + (8 * cq) ** 2
+            n += 1
+        return tot, n
+
     def symbol(self, j, carriers, regs, g):
         """carriers: 1705 (re, im) in the front end's order -> the 853 cell
         words."""
@@ -207,6 +224,19 @@ class T2Eq(Elaboratable):
         self.g_wdata = Signal(32)
         self.g_we = Signal()
         self.symbols = Signal(16)   # out: symbols equalized
+        # MER from the scattered pilots of the cells sent (mer_en): per
+        # pilot (8 I - s ref8)^2 + (8 Q)^2 (s the pilot's sign, ref8 = 8 x
+        # the pilot amplitude in cell units: 213 for 4/3), summed over a
+        # frame; after its last symbol (nsym - 1) the sum >> 4, the pilots
+        # counted and the frame's start (header bits 28:8) come out with a
+        # pulse on mer_valid.
+        self.mer_en = Signal()
+        self.ref8 = Signal(10, init=213)
+        self.nsym = Signal(8)
+        self.mer_valid = Signal()
+        self.mer_err = Signal(32)
+        self.mer_n = Signal(16)
+        self.mer_f21 = Signal(21)
         # out: the G bank of the symbol being equalized (gbank and gshift
         # are taken together at each symbol's header: software waits for
         # this to follow a flip before it writes the other bank again)
@@ -360,6 +390,29 @@ class T2Eq(Elaboratable):
         zr = Signal(signed(16))
         zi = Signal(signed(16))
         neg = Signal()
+        # MER: the next pilot carrier, the cell taken there (a cycle later
+        # squared and summed)
+        pk = Signal(12)
+        mq = Signal()
+        mq_r = Signal(signed(12))
+        mq_i = Signal(signed(12))
+        m_acc = Signal(36)
+        m_cnt = Signal(16)
+        m_end = Signal()
+        m.d.sync += self.mer_valid.eq(0)
+        neg_o = Signal()
+        m.d.comb += neg_o.eq(prbs_rd.data ^ pn_rd.data)
+        sq = Signal(23)
+        m.d.comb += sq.eq(mq_r * mq_r + mq_i * mq_i)
+        acc_next = Signal(36)
+        m.d.comb += acc_next.eq(m_acc + Mux(mq, sq, 0))
+        with m.If(mq):
+            m.d.sync += [m_acc.eq(acc_next), m_cnt.eq(m_cnt + 1), mq.eq(0)]
+        with m.If(m_end):
+            payload = Cat(p_hdr[1:16], p_hdr[17:32])
+            m.d.sync += [self.mer_valid.eq(1), self.mer_err.eq(acc_next >> 4),
+                         self.mer_n.eq(m_cnt + mq), self.mer_f21.eq(payload[8:29]),
+                         m_acc.eq(0), m_cnt.eq(0), m_end.eq(0)]
         m.d.comb += [z_rd.addr.eq(Cat(k[:11], p_bank)), prbs_rd.addr.eq(k), pn_rd.addr.eq(p_j),
                      cos_rd.addr.eq(phase[32 - LUT_BITS:]),
                      sin_rd.addr.eq(phase[32 - LUT_BITS:])]
@@ -473,6 +526,9 @@ class T2Eq(Elaboratable):
             with m.State('OUT_HDR'):
                 with m.If(self.o_rdy):
                     m.d.comb += [self.o_data.eq(p_hdr), self.o_en.eq(1)]
+                    m.d.sync += pk.eq(k0)
+                    with m.If(p_j == self.p2):
+                        m.d.sync += [m_acc.eq(0), m_cnt.eq(0)]
                     m.next = 'OUT_RD'
             with m.State('OUT_RD'):
                 m.next = 'OUT_MUL'
@@ -491,6 +547,19 @@ class T2Eq(Elaboratable):
                 cell = Cat(satc(vr)[:7], satc(vi)[:7])
                 last = Signal()
                 m.d.comb += last.eq(k == CARRIERS - 1)
+                # this cell taken now (the second of a pair, or the last,
+                # only when the word goes out)
+                adv = Signal()
+                m.d.comb += adv.eq(Mux(half | last, self.o_rdy, 1))
+                with m.If(adv & (k == pk)):
+                    cr = Signal(signed(12))
+                    cq = Signal(signed(12))
+                    m.d.comb += [cr.eq(satc(vr)), cq.eq(satc(vi))]
+                    m.d.sync += [mq.eq(self.mer_en),
+                                 mq_r.eq((cr << 3) - Mux(neg_o, -self.ref8.as_signed(), self.ref8.as_signed())),
+                                 mq_i.eq(cq << 3), pk.eq(pk + d)]
+                with m.If(adv & last & (p_j == self.nsym - 1)):
+                    m.d.sync += m_end.eq(1)
                 with m.If(~half):
                     with m.If(last):
                         with m.If(self.o_rdy):

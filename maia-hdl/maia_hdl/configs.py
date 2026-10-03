@@ -55,6 +55,13 @@ def maia_iio_lite_s2():
     config.datv_t2 = False
     return config
 
+def maia_iio_lite_t2():
+    """tezuka_fw_simple mode bitstream "t2": maia_iio_lite_datv without the
+    DVB-S2 receive front end (symbol timing recovery, header detector)"""
+    config = maia_iio_lite_datv()
+    config.datv_s2 = False
+    return config
+
 def maia_iio_lite_trx():
     """tezuka_fw_simple mode bitstream "trx": the spectrometer (wide scope)
     only. Platform 0xD6: trxd leaves the recorder alone (0xD5 only)."""

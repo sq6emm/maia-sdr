@@ -102,6 +102,12 @@ class Recorder16IQ(Elaboratable):
         self.stop = Signal()
         self.finished = Signal()
         self.dropped_samples = Signal()
+        # The words going into the ring (16-bit mode; domain_in): word_valid
+        # when one is taken, run_start when recording starts (the ring's
+        # absolute index restarts at 0). For s2trk.py.
+        self.word_out = Signal(32)
+        self.word_valid = Signal()
+        self.run_start = Signal()
         self.next_address = Signal(axi_awidth)
         self.committed_address = Signal(axi_awidth)
         self.wraps = Signal(16)
@@ -190,6 +196,12 @@ class Recorder16IQ(Elaboratable):
         dropped = Signal()
         run_in_q = Signal()
         m.d[self.domain_in] += run_in_q.eq(run_in)
+        m.d.comb += [
+            self.word_out.eq(pack16.out),
+            self.word_valid.eq(pack16.strobe_out & ~fifo.full
+                               & (mode == RecorderMode.MODE_16BIT)),
+            self.run_start.eq(run_in & ~run_in_q),
+        ]
         with m.If(fifo.wrerr):
             m.d[self.domain_in] += dropped.eq(1)
         with m.If(run_in & ~run_in_q):

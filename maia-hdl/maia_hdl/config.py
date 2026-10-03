@@ -33,6 +33,13 @@ class MaiaSDRConfig:
         # With datv_symsync: the DVB-T2 front end too (resampler, OFDM,
         # equalizer; register window 0x40..). False: DVB-S2 only.
         self.datv_t2 = True
+        # With datv_symsync: the DVB-S2 receive front end (symbol timing
+        # recovery, header detector). False with datv_t2: the DVB-T2 mode
+        # bitstream (tezuka_fw_simple docs/FPGA-MODES.md "t2").
+        self.datv_s2 = True
+        # DVB-S2 known-symbol accumulator (s2trk.py) in the register window
+        # T2 uses: only without the T2 front end (the s2 mode bitstream).
+        self.datv_s2trk = True
         self.Enable_RawFFT = False
 
 

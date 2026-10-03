@@ -46,6 +46,11 @@ from amaranth.lib.memory import Memory
 
 from .fft import FFT
 from .t2eq import T2Eq
+from .t2p1 import T2P1, REPORT_WORDS
+
+# Report records in the carrier stream (headers with these symbol numbers):
+# P1 and guard intervals (t2p1.py), the frame's pilot MER (t2eq.py).
+MER_J = 251
 
 N = 2048
 ORDER = 11
@@ -227,6 +232,38 @@ class Model:
         return raw, car
 
 
+class EqRingFilter(Elaboratable):
+    """Equalized symbols into the ring: all (ring_j 0), or only symbol
+    ring_j's (header and cells; others dropped, the router has them). Sits
+    at a FIFO's output: data/valid are its r_data/r_rdy, pop its r_en; the
+    consumer sees avail and takes a word with take. Words of other kinds
+    (unequalized symbols' headers and carriers) all pass."""
+
+    def __init__(self):
+        self.data = Signal(32)
+        self.valid = Signal()
+        self.ring_j = Signal(8)
+        self.take = Signal()
+        self.avail = Signal()
+        self.pop = Signal()
+
+    def elaborate(self, platform):
+        m = Module()
+        is_hdr = self.data[0] & self.data[16]
+        is_eqh = is_hdr & self.data[31]
+        dropping = Signal()
+        drop = Signal()
+        m.d.comb += [
+            drop.eq(self.valid & Mux(is_hdr, is_eqh & (self.ring_j != 0)
+                                     & (self.data[1:9] != self.ring_j), dropping)),
+            self.avail.eq(self.valid & ~drop),
+            self.pop.eq(drop | (self.avail & self.take)),
+        ]
+        with m.If(self.pop & is_hdr):
+            m.d.sync += dropping.eq(drop)
+        return m
+
+
 class T2Ofdm(Elaboratable):
     """See the module docstring. Clock domain ``sync``; the FFT's complex
     multipliers run in ``clk3x`` (``common_edge_3x`` as for Maia's other
@@ -251,6 +288,20 @@ class T2Ofdm(Elaboratable):
         # debug: every sample raw, schedule or not (FFTs checkable against
         # the raw samples)
         self.raw_always = Signal()
+        # P1 detector and guard-interval correlator (t2p1.py), threshold
+        # factor k / 256; no raw samples while unscheduled (acquisition from
+        # the P1 reports) or around the guard intervals (the frequency from
+        # the GI reports); the pilot MER report (t2eq); equalized symbols
+        # into the ring: all (0) or only symbol ``eq_ring_j`` (the router
+        # takes them all from the equalizer in any case).
+        self.p1_en = Signal()
+        self.p1_k = Signal(8, init=64)
+        self.acq_raw_off = Signal()
+        self.gi_raw_off = Signal()
+        self.mer_en = Signal()
+        self.ref8 = Signal(10, init=213)
+        self.eq_ring_j = Signal(8)
+        self.p1_overflow = Signal()  # out
         self.counter = Signal(32)    # out
         self.frames = Signal(22)     # out
         self.overflow = Signal()     # out, sticky until disabled
@@ -339,7 +390,7 @@ class T2Ofdm(Elaboratable):
             sched = Signal()
             m.d.comb += sched.eq(self.scheduled & running)
             with m.If(~self.scheduled):
-                m.d.comb += is_raw.eq(1)
+                m.d.comb += is_raw.eq(~self.acq_raw_off)
             with m.Elif(~running):
                 m.d.comb += is_raw.eq(0)
             with m.Elif(r < 0):
@@ -349,7 +400,7 @@ class T2Ofdm(Elaboratable):
                           | (r >= fl - self.track)):
                     m.d.comb += is_raw.eq(1)
                 with m.If((r >= N) & (j < self.nsym) & ~skip):
-                    with m.If((q < self.gi) | (q >= N)):
+                    with m.If(((q < self.gi) | (q >= N)) & ~self.gi_raw_off):
                         m.d.comb += is_raw.eq(1)
                     lo = self.gi - self.early
                     with m.If((q >= lo) & (q < lo + N)):
@@ -393,6 +444,20 @@ class T2Ofdm(Elaboratable):
                 m.d.sync += [F.eq(pend_start), pending.eq(0),
                              running.eq(1), frame_no.eq(0),
                              skip.eq(start_past)]
+
+        # ---- P1 detector, guard-interval correlator (raw samples) ----
+        m.submodules.p1 = p1 = T2P1()
+        tail = Signal()
+        m.d.comb += tail.eq(self.scheduled & running & in_frame & (r >= N) & (j < self.nsym)
+                            & ~skip & (q >= N))
+        m.d.comb += [p1.enable.eq(self.enable & self.p1_en),
+                     p1.block_len.eq(self.frame_len), p1.k_q8.eq(self.p1_k),
+                     p1.strobe.eq(self.enable & self.strobe_in),
+                     p1.x_re.eq(self.re_in), p1.x_im.eq(self.im_in),
+                     p1.t.eq(self.counter), p1.tail.eq(tail),
+                     p1.last.eq(self.scheduled & running & (r == fl - 1)),
+                     p1.frame_start.eq(F),
+                     self.p1_overflow.eq(p1.overflow)]
 
         # ---- stage 1 -> 2: NCO multiply (tables read) ----
         s2 = Signal()
@@ -518,26 +583,70 @@ class T2Ofdm(Elaboratable):
         m.submodules.eq = eq = self.eq
         eq_fifo = SyncFIFOBuffered(width=32, depth=32)
         m.submodules.eq_fifo = eq_fifo
+        # Equalized symbols into the ring: all, or only eq_ring_j, filtered
+        # at the FIFO's output (t2eq's o_data depends on o_rdy: a filter
+        # cannot gate its input).
+        m.submodules.ring_filter = rf = EqRingFilter()
+        m.d.comb += [rf.data.eq(eq_fifo.r_data), rf.valid.eq(eq_fifo.r_rdy),
+                     rf.ring_j.eq(self.eq_ring_j), eq_fifo.r_en.eq(rf.pop)]
         m.d.comb += [eq.i_data.eq(car_fifo.r_data), eq.i_rdy.eq(car_fifo.r_rdy),
                      car_fifo.r_en.eq(eq.i_en),
                      eq.o_rdy.eq(eq_fifo.w_rdy),
-                     eq_fifo.w_data.eq(eq.o_data), eq_fifo.w_en.eq(eq.o_en)]
+                     eq_fifo.w_data.eq(eq.o_data), eq_fifo.w_en.eq(eq.o_en),
+                     eq.mer_en.eq(self.mer_en), eq.ref8.eq(self.ref8), eq.nsym.eq(self.nsym)]
+
+        # MER report words (MER_J record): err (2), n, frame start f21 (2), 0
+        mer_pend = Signal()
+        mer_w = Signal(range(REPORT_WORDS + 2))
+        mer_vals = Array([Signal(16, name=f"mv{i}") for i in range(REPORT_WORDS)])
+        with m.If(eq.mer_valid & self.mer_en):
+            m.d.sync += [mer_pend.eq(1), mer_w.eq(0),
+                         mer_vals[0].eq(eq.mer_err[:16]), mer_vals[1].eq(eq.mer_err[16:]),
+                         mer_vals[2].eq(eq.mer_n), mer_vals[3].eq(eq.mer_f21[:16]),
+                         mer_vals[4].eq(eq.mer_f21[16:]), mer_vals[5].eq(0)]
+        mer_word = Signal(32)
+        m.d.comb += mer_word.eq(Mux(mer_w == 0,
+                                    Cat(C(1, 1), C(MER_J, 15), C(1, 1), C(0, 15)),
+                                    Cat(C(0, 1), mer_vals[mer_w - 1][:15], C(1, 1),
+                                        mer_vals[mer_w - 1][15], C(0, 14))))
 
         # ---- merge: a word every other cycle, carriers first ----
         turn = Signal()
         m.d.sync += [self.strobe_out.eq(0), turn.eq(~turn)]
-        m.d.comb += [raw_fifo.r_en.eq(0), eq_fifo.r_en.eq(0)]
+        m.d.comb += [raw_fifo.r_en.eq(0), rf.take.eq(0), p1.o_rdy.eq(0)]
+        # a record goes out whole (its words in a row)
+        p1_busy = Signal()
+        p1_left = Signal(range(REPORT_WORDS + 1))
         with m.If(turn):
-            with m.If(eq_fifo.r_rdy):
-                m.d.comb += eq_fifo.r_en.eq(1)
+            with m.If(rf.avail & ~p1_busy & ~(mer_pend & (mer_w != 0))):
+                m.d.comb += rf.take.eq(1)
                 m.d.sync += [self.strobe_out.eq(1),
                              self.re_out.eq(eq_fifo.r_data[:16]),
                              self.im_out.eq(eq_fifo.r_data[16:])]
-            with m.Elif(raw_fifo.r_rdy):
+            with m.Elif(raw_fifo.r_rdy & ~p1_busy & ~(mer_pend & (mer_w != 0))):
                 m.d.comb += raw_fifo.r_en.eq(1)
                 m.d.sync += [self.strobe_out.eq(1),
                              self.re_out.eq(raw_fifo.r_data[:16]),
                              self.im_out.eq(raw_fifo.r_data[16:])]
+            with m.Elif(mer_pend & ~p1_busy):
+                m.d.sync += [self.strobe_out.eq(1),
+                             self.re_out.eq(mer_word[:16]), self.im_out.eq(mer_word[16:])]
+                with m.If(mer_w == REPORT_WORDS):
+                    m.d.sync += [mer_pend.eq(0), mer_w.eq(0)]
+                with m.Else():
+                    m.d.sync += mer_w.eq(mer_w + 1)
+            with m.Elif(p1.o_en | p1_busy):
+                with m.If(p1.o_en):
+                    m.d.comb += p1.o_rdy.eq(1)
+                    m.d.sync += [self.strobe_out.eq(1),
+                                 self.re_out.eq(p1.o_data[:16]), self.im_out.eq(p1.o_data[16:])]
+                    # busy from its header to its last word
+                    with m.If(p1.o_data[0]):
+                        m.d.sync += [p1_busy.eq(1), p1_left.eq(REPORT_WORDS)]
+                    with m.Elif(p1_left == 1):
+                        m.d.sync += [p1_busy.eq(0), p1_left.eq(0)]
+                    with m.Else():
+                        m.d.sync += p1_left.eq(p1_left - 1)
         with m.If(~self.enable):
             m.d.sync += self.overflow.eq(0)
         with m.Elif((raw_fifo.w_en & ~raw_fifo.w_rdy) | (car_fifo.w_en & ~car_fifo.w_rdy)):

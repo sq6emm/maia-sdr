@@ -29,6 +29,12 @@ switch -glob -- $project_name {
         set vctcxo "vctcxo"
         set xo_corrector "xo_corrector"
     }
+    "pluto" {
+        # CMOS interface to the AD9363; xc7z010: no CW-RS network front end,
+        # no refmeter (no reference clock into the fabric); the wide scope
+        # unless SIMPLE_NO_SCOPE=1.
+        set pluto_slim 1
+    }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
         exit 1
@@ -60,7 +66,7 @@ ad_mem_hp2_interconnect sys_cpu_clk axi_ad9361_dac_dma/m_src_axi
 
 if {[info exists vctcxo]} { source $::tezuka_hdl_dir/boards/$project_name/vcxo_ctrl.tcl }
 source rxfir.tcl
-source maia_scope.tcl
+if {!([info exists pluto_slim] && [info exists ::env(SIMPLE_NO_SCOPE)])} { source maia_scope.tcl }
 source $::tezuka_hdl_dir/common/txfir.tcl
 if {[info exists xo_corrector]} { source xo_corrector.tcl }
 # FPGA_MODE (system_project.tcl): the DATV parts or the network front end
@@ -68,16 +74,17 @@ if {$::fpga_mode ne "trx"} {
     source datv_tx.tcl
     source ldpc.tcl
 }
-if {$::fpga_mode ne "datv"} {
+if {[lsearch -exact {trx all} $::fpga_mode] >= 0 && ![info exists pluto_slim]} {
     source rsnn.tcl
 }
-if {$::fpga_mode eq "datv"} {
+if {$::fpga_mode eq "datv" || $::fpga_mode eq "t2"} {
     source t2router.tcl
 }
 
 # Reference oscillator meter (see refmeter.v). PlutoSky R2 brings the 40 MHz
 # VCTCXO and the EXT_IO0 1PPS in through new top-level ports; Libre taps the
 # ports its vctcxo_lock already has.
+if {![info exists pluto_slim]} {
 add_files -norecurse [file normalize refmeter.v]
 update_compile_order -fileset sources_1
 create_bd_cell -type module -reference refmeter refmeter_0
@@ -94,3 +101,4 @@ if {$project_name eq "plutoskyr2"} {
     ad_connect CLK_40MHz_FPGA refmeter_0/ref_clk
 }
 ad_cpu_interconnect 0x43C10000 refmeter_0
+}

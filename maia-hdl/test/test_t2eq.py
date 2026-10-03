@@ -80,6 +80,8 @@ class TestT2Eq(AmaranthSim):
         g = built[0][1]          # one channel for all (the same h)
         words_in, want = [], []
         hdr_at = {}
+        mer_want = [0, 0]
+        mers = []
         for (j, fc), (x, _, car) in zip(syms, built):
             payload = j | (12345 << 8)
             hdr_at[j] = len(words_in)
@@ -87,8 +89,11 @@ class TestT2Eq(AmaranthSim):
             words_in += [pack(a, b) for a, b in car]
             if j >= regs['p2']:
                 want.append(pack_header(payload) | (1 << 31))
-                w, _ = md.symbol(j, car, regs, g)
+                w, cells = md.symbol(j, car, regs, g)
                 want += w
+                t, nn = md.mer_terms(j, cells, regs)
+                mer_want[0] += t
+                mer_want[1] += nn
             else:
                 want.append(pack_header(payload) & 0x7FFFFFFF)
                 want += [pack(a, b) for a, b in car]
@@ -99,7 +104,8 @@ class TestT2Eq(AmaranthSim):
         async def bench(ctx):
             for name, v in [('enable', 1), ('p2', regs['p2']), ('dx', DX), ('dy', DY),
                             ('fc_j', 197), ('rec_d', regs['rec_d']),
-                            ('rec_fc', regs['rec_fc']), ('gshift', GSHIFT), ('gbank', 1)]:
+                            ('rec_fc', regs['rec_fc']), ('gshift', GSHIFT), ('gbank', 1),
+                            ('mer_en', 1), ('nsym', 198), ('ref8', 213)]:
                 ctx.set(getattr(dut, name), v)
             # G into bank 1
             ctx.set(dut.g_wbank, 1)
@@ -136,12 +142,20 @@ class TestT2Eq(AmaranthSim):
                 await ctx.delay(1e-9)
                 if ctx.get(dut.o_en):
                     got.append(ctx.get(dut.o_data))
+                if ctx.get(dut.mer_valid):
+                    mers.append((ctx.get(dut.mer_err), ctx.get(dut.mer_n), ctx.get(dut.mer_f21)))
                 took = bool(fifo) and ctx.get(dut.i_en)
                 await ctx.tick()
                 if took:
                     fifo.pop(0)
                     consumed += 1
                 cycles += 1
+            # the MER report comes two cycles after the last cell
+            for _ in range(8):
+                await ctx.delay(1e-9)
+                if ctx.get(dut.mer_valid):
+                    mers.append((ctx.get(dut.mer_err), ctx.get(dut.mer_n), ctx.get(dut.mer_f21)))
+                await ctx.tick()
             self.worst = worst
             self.cycles = cycles
             self.poked = poked
@@ -152,6 +166,10 @@ class TestT2Eq(AmaranthSim):
         self.assertEqual(len(got), len(want))
         bad = [i for i in range(len(want)) if got[i] != want[i]]
         self.assertEqual(bad, [], f'first mismatches at {bad[:4]}: got {[hex(got[i]) for i in bad[:2]]} want {[hex(want[i]) for i in bad[:2]]}')
+        # the frame's pilot MER (symbols 10 and 197; 3 is a P2 symbol)
+        self.assertEqual(mers, [(mer_want[0] >> 4, mer_want[1], 12345)])
+        mer = -10 * np.log10((mer_want[0] / mer_want[1]) / (64 * 400))
+        print(f'pilot MER {mer:.1f} dB over {mer_want[1]} pilots')
 
 
 if __name__ == '__main__':

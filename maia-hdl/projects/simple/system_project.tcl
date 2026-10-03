@@ -17,6 +17,11 @@ switch -glob -- $project_name {
     "libre" {
         set p_device "xc7z020clg400-2"
     }
+    "pluto" {
+        # ADALM-Pluto: the transceiver only (trx mode without the CW-RS
+        # network and the refmeter: tezuka_fw_simple docs/FLAVOURS.md).
+        set p_device "xc7z010clg225-1"
+    }
     default {
         puts "CRITICAL WARNING: Project name '$project_name' not recognized."
         exit 1
@@ -33,7 +38,7 @@ if { [info exists ::env(FPGA_MODE)] } {
 } else {
   set fpga_mode "all"
 }
-if {[lsearch -exact {all trx datv} $fpga_mode] < 0} {
+if {[lsearch -exact {all trx datv s2 t2} $fpga_mode] < 0} {
   puts "CRITICAL WARNING: FPGA_MODE '$fpga_mode' not recognized."
   exit 1
 }
@@ -58,7 +63,7 @@ if {$project_name eq "plutoskyr2"} {
 if {$fpga_mode ne "trx"} {
   adi_project_files $project_name [list "datv.xdc"]
 }
-if {$fpga_mode eq "datv"} {
+if {$fpga_mode eq "datv" || $fpga_mode eq "t2"} {
   adi_project_files $project_name [list "t2router.xdc"]
 }
 

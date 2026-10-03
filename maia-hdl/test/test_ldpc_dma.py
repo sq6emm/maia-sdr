@@ -19,6 +19,7 @@ from amaranth.sim import Simulator
 from maia_hdl.ldpc_axi import LdpcAxi, ID5
 from maia_hdl.ldpc_dec import N
 from maia_hdl.ldpc_dec4 import cpu_layout
+from maia_hdl.ldpc_dma import bb_model
 
 VECTORS = os.path.join(os.path.dirname(__file__), 'vectors', 'ldpc_long.json')
 IN, OUT = 0x1630_0000, 0x1631_0000
@@ -250,6 +251,40 @@ class TestLdpcDma(unittest.TestCase):
     def test_ring_qpsk(self):
         self.ring_case(False, True, 22)
 
+    def test_bb(self):
+        """BBFRAME out (0xFF20 bit 6): the decisions packed MSB first, the
+        first Kbch descrambled, and the BCH remainder of the first Nbch, as
+        the model makes them from the same decisions; every vector."""
+        with open(VECTORS) as fh:
+            cases = json.load(fh)
+        for case in cases:
+            llr = np.array(case['llr'], dtype=np.int64)
+            wd, by = cpu_layout(case['rate'])
+            words = np.zeros(N // 4, dtype=np.int64)
+            for v in range(N):
+                words[wd[v]] |= int(llr[v] & 0xFF) << (8 * by[v])
+            nbch = 48600 if case['rate'] else 32400
+            out_words = -(-nbch // 1024) * 32
+            ddr = ddr_words(words, IN)
+            res = self.run_dut(ddr, N // 4, case['rate'], case['max_iter'], [(0xFF20, 1 << 6)],
+                               out_words=out_words, read_rem=True)
+            self.assertEqual(res['iterations'], case['iterations'])
+            post = np.array(case['post'], dtype=np.int64)
+            dec = np.zeros(N, dtype=np.int64)
+            for v in range(N):
+                dec[4 * wd[v] + by[v]] = post[v] < 0
+            want, rem = bb_model(dec, nbch, out_words)
+            got = []
+            for k in range(0, out_words, 2):
+                beat = ddr.get(OUT + 4 * k)
+                self.assertIsNotNone(beat, f'no beat at word {k}')
+                got += [beat & 0xFFFFFFFF, beat >> 32]
+            bad = [k for k in range(out_words) if got[k] != want[k]]
+            self.assertEqual(bad, [], f'rate {case["rate"]}: {len(bad)} words differ')
+            self.assertEqual(res['rem'], rem, f'rate {case["rate"]}: BCH remainder')
+            self.assertEqual(res['zero'], int(rem == 0))
+            print(f'rate {case["rate"]}: {out_words} words, remainder {"zero" if rem == 0 else "non-zero"}')
+
     def check_decode(self, case, ddr, in_words, regs):
         res = self.run_dut(ddr, in_words, case['rate'], case['max_iter'], regs)
         print(f"{res['iterations']} iterations, converged {res['converged']}, {res['polls']} status polls")
@@ -271,7 +306,8 @@ class TestLdpcDma(unittest.TestCase):
         bad = np.nonzero(got != ram_sign[:OUT_WORDS * 32])[0]
         self.assertEqual(len(bad), 0, f'{len(bad)} decisions differ, first at {bad[:5]}')
 
-    def run_dut(self, ddr, in_words, rate, max_iter, regs, read_ram=False):
+    def run_dut(self, ddr, in_words, rate, max_iter, regs, read_ram=False, out_words=OUT_WORDS,
+                read_rem=False):
         dut = LdpcAxi(lanes=4, dma=True)
         a = dut.dma.axi
         random.seed(7)
@@ -352,7 +388,7 @@ class TestLdpcDma(unittest.TestCase):
             await write(ctx, 0xFF10, IN)
             await write(ctx, 0xFF14, OUT)
             await write(ctx, 0xFF18, in_words)
-            await write(ctx, 0xFF1C, OUT_WORDS)
+            await write(ctx, 0xFF1C, out_words)
             for r, v in regs:
                 await write(ctx, r, v)
             await write(ctx, 0xFF00, 1 | 4 | rate << 1 | max_iter << 8)
@@ -362,6 +398,12 @@ class TestLdpcDma(unittest.TestCase):
             res['iterations'] = (st >> 8) & 0x3F
             res['converged'] = (st >> 1) & 1
             res['polls'] = polls
+            res['zero'] = (st >> 3) & 1
+            if read_rem:
+                rem = 0
+                for n in range(6):
+                    rem |= (await read(ctx, 0xFF4C + 4 * n)) << (32 * n)
+                res['rem'] = rem
             if read_ram:
                 res['ram'] = [await read(ctx, 4 * w) for w in range(N // 4)]
 

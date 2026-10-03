@@ -187,3 +187,97 @@ class TestT2OfdmRestart(AmaranthSim):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestT2OfdmReports(AmaranthSim):
+    """P1 / GI reports through the front end (t2p1.py): searching with no
+    raw samples (acq_raw_off) only the P1 records come out; then scheduled
+    with gi_raw_off, raw samples only in the P1 windows, and the records
+    (P1 and GI, the tails and frame ends from the schedule) as the model
+    makes them."""
+    def test_reports(self):
+        from maia_hdl.t2p1 import Model as P1Model, P1_J, GI_J
+        from .test_t2p1 import signal
+        N, gi, nsym, track = 2048, 256, 2, 64
+        sl = N + gi
+        fl = N + nsym * sl
+        p1_at = [1000 + k * fl for k in range(5)]
+        n = p1_at[-1] + fl
+        x = signal(n, p1_at, np.random.default_rng(4))
+        load_at = p1_at[1] + 300        # the schedule given here,
+        F0 = p1_at[2]                   # starting at the third P1
+        regs = dict(frame_len=fl, nsym=nsym, gi=gi, early=64, track=track,
+                    freq=0, shift=1, p1_en=1, p1_k=64, acq_raw_off=1, gi_raw_off=1)
+        # the model, with the front end's tail / last marks
+        md = P1Model(fl, 64)
+        want, raw_expected = [], 0
+        for t, (re, im) in enumerate(x):
+            tail = last = False
+            fs = 0
+            sched = t > load_at
+            if sched and t >= F0 - track:
+                r = (t - F0) % fl if t >= F0 else t - F0
+                F = F0 + ((t - F0) // fl) * fl if t >= F0 else F0
+                if r < 0:
+                    raw_expected += 1
+                else:
+                    if r < N + track or r >= fl - track:
+                        raw_expected += 1
+                    if r >= N:
+                        u = r - N
+                        jj, q = u // sl, u % sl
+                        tail = jj < nsym and q >= N
+                    last = r == fl - 1
+                    fs = F
+            want += md.push(re, im, t, tail, last, fs)
+        recs_want = [w for w in want]
+
+        ofdm = T2Ofdm()
+        self.dut = ofdm
+        got = []
+
+        async def tick(ctx):
+            if ctx.get(ofdm.strobe_out):
+                got.append(ctx.get(ofdm.re_out) | ctx.get(ofdm.im_out) << 16)
+            await ctx.tick()
+
+        async def bench(ctx):
+            for k, v in regs.items():
+                ctx.set(getattr(ofdm, k), v)
+            ctx.set(ofdm.enable, 1)
+            await ctx.tick()
+            for t, (re, im) in enumerate(x):
+                if t == load_at + 1:
+                    ctx.set(ofdm.scheduled, 1)
+                    ctx.set(ofdm.next_start, F0)
+                    ctx.set(ofdm.load, 1)
+                    await tick(ctx)
+                    ctx.set(ofdm.load, 0)
+                    await tick(ctx)
+                ctx.set(ofdm.re_in, re)
+                ctx.set(ofdm.im_in, im)
+                ctx.set(ofdm.strobe_in, 1)
+                await tick(ctx)
+                ctx.set(ofdm.strobe_in, 0)
+                for _ in range(19):
+                    await tick(ctx)
+            for _ in range(400):
+                await tick(ctx)
+            self.assertEqual(ctx.get(ofdm.overflow), 0)
+            self.assertEqual(ctx.get(ofdm.p1_overflow), 0)
+
+        self.simulate(bench)
+        # records: carrier-stream headers for symbols 252 / 253 and the six
+        # words after each
+        recs, i = [], 0
+        while i < len(got):
+            w = got[i]
+            if w & 1 and w & (1 << 16) and (w >> 1) & 0xFF in (P1_J, GI_J):
+                recs += got[i:i + 7]
+                i += 7
+            else:
+                i += 1
+        self.assertEqual(recs, recs_want)
+        raw = [w for w in got if not w & (1 << 16) and not w & 1]
+        self.assertEqual(len(raw), raw_expected)
+        print(f'{len(recs) // 7} records, {len(raw)} raw samples')

@@ -11,7 +11,8 @@
                    bits 13:8 maximum iterations
   0xFF04  status   R: bit 0 busy, bit 1 converged, bit 2 AXI error (DDR
                    engine: a burst answered SLVERR/DECERR, sticky until
-                   the next start), bits 13:8 iterations, bits 31:24
+                   the next start), bit 3 the BCH remainder is zero (after
+                   a decode with 0xFF20 bit 6), bits 13:8 iterations, bits 31:24
                    decodes finished (counts every busy -> idle)
   0xFF08  id       "LDP1" (lanes 4: "LDP4", ldpc_dec4.py, whose parity
                    words are laid out in banks: see there; with the DDR
@@ -28,6 +29,10 @@
   bit 5 DVB-S2 long frames from the receive ring (s2front.py: the words
   in are ring symbols from 0xFF10, wrapping at 0xFF38 to 0xFF34; 0xFF18
   counts them with the lead; features bit 4);
+  bit 6 BBFRAME out (ldpc_dma.py: the decisions packed MSB first a byte
+  at a time, the first Kbch descrambled, and the BCH remainder of the first
+  Nbch in 0xFF4C (bits 31:0) .. 0xFF60 (191:160); status bit 3 when it is
+  zero, a valid BCH codeword; features bit 5);
   0xFF24 kq; 0xFF28 c14 (15:0), s14 (31:16); 0xFF2C a14 (16QAM level);
   0xFF34 ring start, 0xFF38 ring end (bytes, 128-aligned); 0xFF3C gain G
   (16:0), lead (28:24: words before the frame's first symbol), bit 31
@@ -36,7 +41,8 @@
   0xFF30 features R: bit 0 the finished counter in status 31:24, bit 1 the
                    AXI error bit, bit 2 configuration writes ignored while
                    busy, bit 3 DVB-S2 8PSK cells (0xFF20 bit 4), bit 4
-                   DVB-S2 frames from the ring (0xFF20 bit 5) (0 on older
+                   DVB-S2 frames from the ring (0xFF20 bit 5), bit 5
+                   BBFRAME out and the BCH remainder (0xFF20 bit 6) (0 on older
                    cores: the register reads 0).
 
 Writes to the configuration registers (0xFF00 rate/iterations and
@@ -157,7 +163,8 @@ class LdpcAxi(Elaboratable):
                                                  dma.load_only.eq(self.s_axi_wdata[2]),
                                                  dma.qam16.eq(self.s_axi_wdata[3]),
                                                  dma.psk8.eq(self.s_axi_wdata[4]),
-                                                 dma.ring.eq(self.s_axi_wdata[5])]
+                                                 dma.ring.eq(self.s_axi_wdata[5]),
+                                                 dma.bb.eq(self.s_axi_wdata[6])]
                                 with m.Case(0x24):
                                     m.d.sync += dma.kq.eq(self.s_axi_wdata)
                                 with m.Case(0x28):
@@ -193,13 +200,18 @@ class LdpcAxi(Elaboratable):
                         with m.Case(0x04):
                             m.d.sync += rd_regval.eq(Cat(busy, dec.converged,
                                                          dma.axi_err if dma else C(0, 1),
-                                                         C(0, 5), dec.iterations,
+                                                         dma.bch_zero if dma else C(0, 1),
+                                                         C(0, 4), dec.iterations,
                                                          C(0, 10), done_count))
                         with m.Case(0x08):
                             m.d.sync += rd_regval.eq(self.id)
                         with m.Case(0x30):
                             m.d.sync += rd_regval.eq(0b101 | ((1 if dma else 0) << 1) | ((1 if dma else 0) << 3)
-                                                     | ((1 if dma else 0) << 4))
+                                                     | ((1 if dma else 0) << 4) | ((1 if dma else 0) << 5))
+                        if dma:
+                            for n in range(6):
+                                with m.Case(0x4C + 4 * n):
+                                    m.d.sync += rd_regval.eq(dma.bch_rem[32 * n:32 * n + 32])
                         with m.Default():
                             m.d.sync += rd_regval.eq(0)
                     m.d.comb += [dec.cpu_addr.eq(self.s_axi_araddr[2:]),

@@ -33,6 +33,18 @@ for 1/sqrt 2), bit m's z = max c over the points whose label has bit m 0
 minus max over those with it 1 (labels to angles: dvbs2 PSK8_PHASE
 1 0 4 5 2 7 3 6), then the LLR as above; bit m of cell j is codeword
 variable m 21600 + j (the 3-column bit interleaver).
+
+BBFRAME out (`bb`, trxd dvbs2/bch.rs and mod.rs bb_scrambling, bit for
+bit): while the decisions go out, the first Nbch of them (the info part:
+32400 / 48600, the BCH codeword) also run through the BCH division, a
+192-bit LFSR four bits a cycle (r = r x + b mod g(x), g the product of
+EN 302 307-1 Table 6a's g1..g12; first bit the coefficient of x^(Nbch-1)),
+whose remainder is `bch_rem` (bit i: x^i; zero for a valid codeword,
+`bch_zero`); the first Kbch = Nbch - 192 decisions are descrambled (the BB
+scrambler 1 + x^14 + x^15, 100101010000000) and every decision is packed a
+byte at a time MSB first: variable 32 k + 8 c + r at bit 8 c + 7 - r of word
+k, so the buffer holds the BBFRAME's bytes in order (then the BCH and LDPC
+parity, as decided). Without `bb` the packing above (bit j: variable 32 k + j).
 """
 
 from amaranth import *
@@ -45,6 +57,78 @@ from .s2front import S2Front
 
 BURST = 16
 FIFO = 64
+
+# EN 302 307-1 Table 6a: g1 .. g12 of normal frames (bit i: x^i)
+BCH_POLYS = [0x1002D, 0x10173, 0x10FBD, 0x15A55, 0x11F2F, 0x1F7B5, 0x1AF65,
+             0x17367, 0x10EA1, 0x175A7, 0x13A2D, 0x11AE3]
+
+
+def bch_generator():
+    """g(x) = g1 .. g12 (degree 192), bit i: x^i."""
+    g = 1
+    for p in BCH_POLYS:
+        r = 0
+        for d in range(17):
+            if (p >> d) & 1:
+                r ^= g << d
+        g = r
+    assert g >> 192 == 1
+    return g
+
+
+BCH_G = bch_generator() & ((1 << 192) - 1)
+
+
+def bch_taps(steps=4):
+    """For `steps` division steps at once (input bits b_0 first, the higher
+    degree): each new register bit as the XOR of old bits ('r', j) and input
+    bits ('b', n), sets (flat, so the HDL is one small XOR a bit)."""
+    st = [frozenset([('r', j)]) for j in range(192)]
+    for n in range(steps):
+        top = st[191]
+        new = [frozenset([('b', n)])] + st[:191]
+        st = [new[i] ^ top if (BCH_G >> i) & 1 else new[i] for i in range(192)]
+    return st
+
+
+BCH_TAPS = bch_taps()
+
+
+def bch_step(r, b):
+    """r x + b mod g, ints (the model)."""
+    top = (r >> 191) & 1
+    r = ((r << 1) | b) & ((1 << 192) - 1)
+    return r ^ BCH_G if top else r
+
+
+def bb_scrambling_bits(n):
+    """The BB scrambler's first n bits."""
+    st, out = 0x00A9, []
+    for _ in range(n):
+        bit = ((st >> 13) ^ (st >> 14)) & 1
+        out.append(bit)
+        st = ((st << 1) | bit) & 0x7FFF
+    return out
+
+
+def bb_model(dec, nbch, out_words):
+    """The `bb` output for decisions dec (RAM variable order, 0/1): the
+    words and the BCH remainder."""
+    kbch = nbch - 192
+    scr = bb_scrambling_bits(kbch)
+    r = 0
+    for v in range(nbch):
+        r = bch_step(r, int(dec[v]))
+    words = []
+    for k in range(out_words):
+        w = 0
+        for c in range(4):
+            for rr in range(8):
+                v = 32 * k + 8 * c + rr
+                b = int(dec[v]) ^ (scr[v] if v < kbch else 0)
+                w |= b << (8 * c + 7 - rr)
+        words.append(w)
+    return words, r
 
 
 class LdpcDma(Elaboratable):
@@ -66,6 +150,10 @@ class LdpcDma(Elaboratable):
         self.cells = Signal()
         self.rot = Signal()
         self.load_only = Signal()
+        # BBFRAME bytes out and the BCH remainder (above)
+        self.bb = Signal()
+        self.bch_rem = Signal(192)
+        self.bch_zero = Signal()
         self.kq = Signal(17)
         self.c14 = Signal(signed(16))
         self.s14 = Signal(signed(16))
@@ -143,6 +231,11 @@ class LdpcDma(Elaboratable):
         i = Signal(15)                 # RAM words read (store)
         i1 = Signal(15)
         rd_ok = Signal()
+        # one more stage: the four decisions of RAM word i2 (variables 4 i2 ..)
+        i2 = Signal(15)
+        v_ok = Signal()
+        nib = Signal(4)
+        prbs = Signal(15, init=0x00A9)
         acc = Signal(32)
         lo = Signal(32)
         nb = Signal(4)                 # beat in the burst
@@ -510,7 +603,8 @@ class LdpcDma(Elaboratable):
             with m.State('WAIT'):
                 m.d.comb += self.busy.eq(1)
                 with m.If(~self.dec_busy):
-                    m.d.sync += [i.eq(0), k.eq(0), rd_ok.eq(0), acc.eq(0)]
+                    m.d.sync += [i.eq(0), k.eq(0), rd_ok.eq(0), v_ok.eq(0), acc.eq(0),
+                                 self.bch_rem.eq(0), prbs.eq(0x00A9)]
                     m.next = 'STORE'
             # read the RAM a word a cycle (i), the four sign bits of each a
             # cycle later (i1)
@@ -524,12 +618,45 @@ class LdpcDma(Elaboratable):
                     m.d.comb += [self.dec_addr.eq(i), self.dec_re.eq(1)]
                     m.d.sync += i.eq(i + 1)
                 m.d.sync += [rd_ok.eq(issuing), i1.eq(i)]
-                with m.If(rd_ok):
+                d = self.dec_rdata
+                m.d.sync += [v_ok.eq(rd_ok), i2.eq(i1), nib.eq(Cat(d[7], d[15], d[23], d[31]))]
+                with m.If(v_ok):
                     j = Signal(3)
-                    m.d.comb += j.eq(i1[:3])
-                    d = self.dec_rdata
+                    m.d.comb += j.eq(i2[:3])
+                    v0 = Signal(17)
+                    m.d.comb += v0.eq(Cat(C(0, 2), i2))
+                    info = Signal()
+                    data = Signal()
+                    m.d.comb += [info.eq(v0 < k_c), data.eq(v0 < k_c - 192)]
+                    # the scrambler's next four bits (in variable order)
+                    pb = []
+                    st = prbs
+                    for _ in range(4):
+                        bit = st[13] ^ st[14]
+                        pb.append(bit)
+                        st = Cat(bit, st[:14])
+                    bx = [Signal(name=f'bx{n}') for n in range(4)]
+                    for n in range(4):
+                        m.d.comb += bx[n].eq(nib[n] ^ (pb[n] & data))
+                    # BCH division, four bits (variable 4 i2 first: the higher
+                    # degree), each register bit a flat XOR (BCH_TAPS)
+                    with m.If(self.bb & info):
+                        for b_i, taps in enumerate(BCH_TAPS):
+                            terms = [self.bch_rem[j] if kind == 'r' else nib[j]
+                                     for kind, j in sorted(taps)]
+                            x = terms[0]
+                            for t in terms[1:]:
+                                x = x ^ t
+                            m.d.sync += self.bch_rem[b_i].eq(x)
+                    with m.If(self.bb & data):
+                        m.d.sync += prbs.eq(st)
                     nacc = Signal(32)
-                    m.d.comb += nacc.eq(acc | (Cat(d[7], d[15], d[23], d[31]) << Cat(C(0, 2), j)))
+                    with m.If(self.bb):
+                        # MSB first: variable 8 c + r of the word at bit 8 c + 7 - r
+                        m.d.comb += nacc.eq(acc | (Cat(bx[3], bx[2], bx[1], bx[0])
+                                                   << Cat(C(0, 2), ~j[0], j[1:3])))
+                    with m.Else():
+                        m.d.comb += nacc.eq(acc | (nib << Cat(C(0, 2), j)))
                     m.d.sync += acc.eq(Mux(j == 7, 0, nacc))
                     with m.If(j == 7):
                         with m.If(k[0]):
@@ -537,7 +664,7 @@ class LdpcDma(Elaboratable):
                         with m.Else():
                             m.d.sync += lo.eq(nacc)
                         m.d.sync += k.eq(k + 1)
-                with m.If(~issuing & ~rd_ok):
+                with m.If(~issuing & ~rd_ok & ~v_ok):
                     m.d.sync += [k.eq(0), nb.eq(0), bursts.eq(0)]
                     m.next = 'AW'
             # the buffer out: a burst of 16 beats (32 words) at a time
@@ -574,6 +701,7 @@ class LdpcDma(Elaboratable):
                 m.d.comb += self.busy.eq(1)
                 with m.If((bursts == 0) | ((bursts == 1) & a.bvalid)):
                     m.next = 'IDLE'
+        m.d.sync += self.bch_zero.eq(self.bch_rem == 0)
         with m.If(llr_we):
             m.d.comb += [self.dec_addr.eq(s3_addr),
                          self.dec_wdata.eq(Cat(s3_q, s3_q, s3_q, s3_q)),
