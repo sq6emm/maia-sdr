@@ -43,6 +43,15 @@ foreach i {0 1} {
     ad_connect rx_fir_decimator_pre/data_out_$i   rx_fir_decimator/data_in_$i
 }
 
+# The pre-stage's output (3.072 MS/s) is also Maia's zoom input: the
+# spectrometer at 750 Hz bins for the views between the stream and the
+# whole band (maia_hdl config.spectrometer_zoom, register bit use_zoom).
+if {[get_bd_pins -quiet maia_sdr/zoom_re_in] ne ""} {
+    ad_connect rx_fir_decimator_pre/data_out_0  maia_sdr/zoom_re_in
+    ad_connect rx_fir_decimator_pre/data_out_1  maia_sdr/zoom_im_in
+    ad_connect rx_fir_decimator_pre/valid_out_0 maia_sdr/zoom_valid_in
+}
+
 # ---- TX ---------------------------------------------------------------------
 add_files -norecurse [file normalize sat_shl2.v]
 update_compile_order -fileset sources_1

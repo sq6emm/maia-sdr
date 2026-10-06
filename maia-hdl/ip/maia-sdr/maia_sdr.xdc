@@ -17,3 +17,7 @@ set_false_path -to [get_pins recorder/fifo/fifo18e1/RST]
 
 # False path for the RST of the FIFO18E1 used in the RX IQ CDC
 set_false_path -to [get_pins rxiq_cdc/fifo/fifo18e1/RST]
+
+# The same for the zoom input's CDC (config.spectrometer_zoom; absent in the
+# other cores, hence -quiet)
+set_false_path -quiet -to [get_pins -quiet zoom_cdc/fifo/fifo18e1/RST]

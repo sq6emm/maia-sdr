@@ -52,6 +52,8 @@ if {$::fpga_mode ne "trx"} {
 }
 
 ad_connect maia_sdr/sampling_clk util_ad9361_divclk/clk_out
+# trx (wide LibreSDR, rate64.tcl): the first x8 decimation stage (3.072 MS/s)
+# as the spectrometer's zoom input (maia_hdl config.spectrometer_zoom).
 ad_connect sys_cpu_clk maia_sdr/s_axi_lite_clk
 ad_connect sys_cpu_reset maia_sdr/s_axi_lite_rst
 ad_connect maia_sdr_clk/clk_out1 maia_sdr/clk

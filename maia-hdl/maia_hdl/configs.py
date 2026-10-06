@@ -76,6 +76,7 @@ def maia_iio_lite_trx():
     config.recorder_from_ddc = True
     config.platform = 0xD7
     config.Enable_RawFFT = False
+    config.spectrometer_zoom = True
     return config
 
 def maia_iio_lite_fft():

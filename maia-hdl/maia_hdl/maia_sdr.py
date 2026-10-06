@@ -145,6 +145,11 @@ class MaiaSDR(Elaboratable):
                               Access.RW,
                               1,
                               0),
+                        # bit 16: the zoom input (config.spectrometer_zoom)
+                        Field('use_zoom',
+                              Access.RW,
+                              1,
+                              0),
                     ]),
                 0b001: Register(
                     'ddc_coeff_addr',
@@ -412,6 +417,11 @@ class MaiaSDR(Elaboratable):
         # a new sample every cycle; without it about 1 % of the samples came
         # in twice (fatal to DVB-T2's OFDM).
         self.valid_in = Signal(init=1)
+        # The zoom input (config.spectrometer_zoom): decimated I/Q (16 bits,
+        # the ADC's scale) with its valid, in the sampling domain.
+        self.zoom_re_in = Signal(signed(16))
+        self.zoom_im_in = Signal(signed(16))
+        self.zoom_valid_in = Signal()
         self.interrupt_out = Signal()
         self.clk_fastlock_out = Signal()
         self.fastlock_profile_in = Signal(3)
@@ -435,6 +445,8 @@ class MaiaSDR(Elaboratable):
                 self.im_in,
             ]
             + ([self.valid_in] if self.config.datv_symsync else [])
+            + ([self.zoom_re_in, self.zoom_im_in, self.zoom_valid_in]
+               if self.config.spectrometer_zoom else [])
             + ([self.t2_eq_data, self.t2_eq_valid] if self.has_t2 else [])
             + [
                 self.interrupt_out,
@@ -542,12 +554,31 @@ class MaiaSDR(Elaboratable):
         assert len(spectrometer_re_in) == len(self.ddc.re_out)
         assert len(spectrometer_im_in) == len(self.ddc.im_out)
         spectrometer_strobe_in = Signal()
+        if self.config.spectrometer_zoom:
+            # The zoom input: clamped to the ADC's 12 bits (the decimator's
+            # filter can overshoot a little), then pushed to the MSBs like
+            # the raw samples, into the Maia clock domain.
+            m.submodules.zoom_cdc = zoom_cdc = RxIQCDC(
+                'sampling', 'sync', self.iq_in_width)
+            def clamp12(x):
+                return Mux(x > 2047, 2047, Mux(x < -2048, -2048, x))[:12]
+            m.d.comb += [zoom_cdc.re_in.eq(clamp12(self.zoom_re_in)),
+                         zoom_cdc.im_in.eq(clamp12(self.zoom_im_in)),
+                         zoom_cdc.valid_in.eq(self.zoom_valid_in)]
         with m.If(self.sdr_registers['spectrometer']['use_ddc_out']):
             m.d.sync += [
                 spectrometer_re_in.eq(self.ddc.re_out),
                 spectrometer_im_in.eq(self.ddc.im_out),
                 spectrometer_strobe_in.eq(self.ddc.strobe_out),                
             ]
+        if self.config.spectrometer_zoom:
+            with m.Elif(self.sdr_registers['spectrometer']['use_zoom']):
+                shift = self.spectrometer.width_in - self.iq_in_width
+                m.d.sync += [
+                    spectrometer_re_in.eq(zoom_cdc.re_out << shift),
+                    spectrometer_im_in.eq(zoom_cdc.im_out << shift),
+                    spectrometer_strobe_in.eq(zoom_cdc.strobe_out),
+                ]
         with m.Else():
             shift = self.spectrometer.width_in - self.iq_in_width
             m.d.sync += [
@@ -1036,6 +1067,9 @@ class MaiaSDR(Elaboratable):
 
         m.d.comb += ddciq_cdc.reset.eq(
             self.control_registers['control']['sdr_reset'])    
+        if self.config.spectrometer_zoom:
+            m.d.comb += zoom_cdc.reset.eq(
+                self.control_registers['control']['sdr_reset'])    
 
         # Interrupts (s_axi_lite domain)
         interrupts_reg = self.control_registers['interrupts']

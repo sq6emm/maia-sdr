@@ -30,6 +30,11 @@ class MaiaSDRConfig:
         # DATV: symbol timing recovery between the DDC and the recorder
         # (symsync.py; registers sdr 0b110 / 0b111).
         self.datv_symsync = False
+        # tezuka_fw_simple wide trx image: a second spectrometer input (the
+        # first x8 decimation stage, 3.072 MS/s at 24.576), selected by the
+        # spectrometer register's use_zoom bit: 750 Hz bins for the views
+        # between the ARM's stream and the whole band.
+        self.spectrometer_zoom = False
         # With datv_symsync: the DVB-T2 front end too (resampler, OFDM,
         # equalizer; register window 0x40..). False: DVB-S2 only.
         self.datv_t2 = True
