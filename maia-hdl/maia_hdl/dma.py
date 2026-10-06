@@ -112,6 +112,19 @@ class DmaBRAMWrite(Elaboratable):
         with m.If(self.axi.aw_handshake()):
             m.d.sync += axi_addr_counter.eq(axi_addr_counter + 1)
 
+        # Addresses only for the buffer being written, its bursts counted
+        # from start (tezuka_fw_simple 2026-10-06): with awvalid held high
+        # the HP port took addresses ahead of any data, and a reset of the
+        # core while idle (trxd's quiesce) left them queued; every spectrum
+        # after that landed 544 bins low in its buffer.
+        bursts_per_buffer = 2**(len(self.raddr) - burst_len_log2)
+        aw_left = Signal(range(bursts_per_buffer + 1))
+        with m.If(self.start):
+            m.d.sync += aw_left.eq(bursts_per_buffer)
+        with m.Elif(self.axi.aw_handshake()):
+            m.d.sync += aw_left.eq(aw_left - 1)
+        m.d.comb += self.axi.awvalid.eq(aw_left != 0)
+
         # Beat counter to determine the end of bursts
         beat_counter = Signal(burst_len_log2)
         beat_counter_next = Signal(len(beat_counter) + 1)
@@ -142,7 +155,6 @@ class DmaBRAMWrite(Elaboratable):
 
         m.d.sync += [
             self.axi.bready.eq(1),
-            self.axi.awvalid.eq(1),
         ]
 
         start_del = Signal(self.bram_latency)

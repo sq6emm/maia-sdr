@@ -24,11 +24,10 @@ set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_
                         CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
 
 # trx mode: the spectrometer-only core (no DDC ring, no valid_in)
-switch -- $::fpga_mode {
-    trx     { ad_ip_instance maia_sdr_maia_iio_lite_trx maia_sdr }
-    s2      { ad_ip_instance maia_sdr_maia_iio_lite_s2 maia_sdr }
-    t2      { ad_ip_instance maia_sdr_maia_iio_lite_t2 maia_sdr }
-    default { ad_ip_instance maia_sdr_maia_iio_lite_datv maia_sdr }
+if {$::fpga_mode eq "trx"} {
+    ad_ip_instance maia_sdr_maia_iio_lite_trx maia_sdr
+} else {
+    ad_ip_instance maia_sdr_maia_iio_lite_datv maia_sdr
 }
 
 # 12-bit I/Q straight from the ADC FIFO (before the x8 decimator).
@@ -53,8 +52,6 @@ if {[get_bd_pins -quiet maia_sdr/valid_in] ne ""} {
 }
 
 ad_connect maia_sdr/sampling_clk util_ad9361_divclk/clk_out
-# trx (wide LibreSDR, rate64.tcl): the first x8 decimation stage (3.072 MS/s)
-# as the spectrometer's zoom input (maia_hdl config.spectrometer_zoom).
 ad_connect sys_cpu_clk maia_sdr/s_axi_lite_clk
 ad_connect sys_cpu_reset maia_sdr/s_axi_lite_rst
 ad_connect maia_sdr_clk/clk_out1 maia_sdr/clk

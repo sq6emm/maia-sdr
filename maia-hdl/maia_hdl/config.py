@@ -35,6 +35,9 @@ class MaiaSDRConfig:
         # spectrometer register's use_zoom bit: 750 Hz bins for the views
         # between the ARM's stream and the whole band.
         self.spectrometer_zoom = False
+        # The ADC FIFO's valid as the input strobe without the DATV front end
+        # (the trx core): one sample per valid, none repeated or lost.
+        self.valid_in = False
         # With datv_symsync: the DVB-T2 front end too (resampler, OFDM,
         # equalizer; register window 0x40..). False: DVB-S2 only.
         self.datv_t2 = True

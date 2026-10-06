@@ -444,7 +444,7 @@ class MaiaSDR(Elaboratable):
                 self.re_in,
                 self.im_in,
             ]
-            + ([self.valid_in] if self.config.datv_symsync else [])
+            + ([self.valid_in] if self.config.datv_symsync or self.config.valid_in else [])
             + ([self.zoom_re_in, self.zoom_im_in, self.zoom_valid_in]
                if self.config.spectrometer_zoom else [])
             + ([self.t2_eq_data, self.t2_eq_valid] if self.has_t2 else [])
@@ -527,7 +527,7 @@ class MaiaSDR(Elaboratable):
             'sampling', 'sync', self.iq_in_width)
         m.d.comb += [rxiq_cdc.re_in.eq(self.re_in),
                      rxiq_cdc.im_in.eq(self.im_in)]
-        if self.config.datv_symsync:
+        if self.config.datv_symsync or self.config.valid_in:
             m.d.comb += rxiq_cdc.valid_in.eq(self.valid_in)
 
         #CDC ddc out
