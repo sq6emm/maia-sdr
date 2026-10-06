@@ -2,6 +2,7 @@
 #
 #   RX: axi_ad9361 -> adc_fifo -> [libre: XO NCO] -> x8 FIR decimator -> cpack -> ADC DMA
 #   TX: DAC DMA -> upack -> x8 FIR interpolator -> [libre: XO NCO] -> dac_fifo -> axi_ad9361
+#   (LibreSDR trx: x64 both ways, the AD9361 at 24.576 MS/s; rate64.tcl)
 #
 # Both filters are bypassed after reset and switched in by bit 0 of the
 # axi_ad9361 ADC / DAC GPIO-out registers (0x790200BC / 0x790240BC), the same
@@ -68,6 +69,9 @@ source rxfir.tcl
 if {!([info exists pluto_slim] && [info exists ::env(SIMPLE_NO_SCOPE)])} { source maia_scope.tcl }
 source $::tezuka_hdl_dir/common/txfir.tcl
 if {[info exists xo_corrector]} { source xo_corrector.tcl }
+# LibreSDR trx: the AD9361 at 24.576 MS/s, x64 to and from the DMAs, so
+# Maia's spectrometer sees ~24 MHz (rate64.tcl)
+if {$::fpga_mode eq "trx" && $project_name eq "libre"} { source rate64.tcl }
 # FPGA_MODE (system_project.tcl): the DATV parts
 if {$::fpga_mode ne "trx"} {
     source datv_tx.tcl
