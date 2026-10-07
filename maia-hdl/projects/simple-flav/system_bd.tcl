@@ -68,16 +68,16 @@ source rxfir.tcl
 if {!([info exists pluto_slim] && [info exists ::env(SIMPLE_NO_SCOPE)])} { source maia_scope.tcl }
 source $::tezuka_hdl_dir/common/txfir.tcl
 if {[info exists xo_corrector]} { source xo_corrector.tcl }
-# trx: the AD9361 at 24.576 MS/s, x64 to and from the DMAs, so Maia's
-# spectrometer sees ~24 MHz, plus its zoom input (rate64.tcl, as in
-# projects/simple for the LibreSDR)
-if {$::fpga_mode eq "trx" && $project_name eq "plutoskyr2"} { source rate64.tcl }
+# PlutoSky R2, every mode: the AD9361 at 24.576 MS/s, x64 to and from the
+# DMAs, so Maia's spectrometer sees ~24 MHz, plus its zoom input (rate64.tcl,
+# as in projects/simple for the LibreSDR)
+if {$project_name eq "plutoskyr2"} { source rate64.tcl }
 # FPGA_MODE (system_project.tcl): the DATV parts
 if {$::fpga_mode ne "trx"} {
     source datv_tx.tcl
     source ldpc.tcl
 }
-if {$::fpga_mode eq "datv"} {
+if {$::fpga_mode eq "datv" || $::fpga_mode eq "t2"} {
     source t2router.tcl
 }
 

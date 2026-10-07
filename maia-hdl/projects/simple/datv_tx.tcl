@@ -118,14 +118,32 @@ ad_connect sys_cpu_resetn datv_fifo_out/s_axis_aresetn
 ad_connect util_ad9361_divclk/clk_out datv_fifo_out/m_axis_aclk
 ad_connect datv_tx_0/m_axis datv_fifo_out/S_AXIS
 
-# Merge in front of the XO corrector (Libre) or the DAC FIFO (PlutoSky R2)
+# Merge in front of the XO corrector (Libre) or the DAC FIFO (PlutoSky R2);
+# with the x64 path (rate64.tcl) in front of its DAC-side x8 stage instead,
+# at 3.072 MS/s: datv_tx's interpolator works at that rate (16 taps per
+# sample on the CPU clock: 24.576 MS/s is out of its reach), and the stage
+# (unity gain there) takes the signal to the DAC rate. One sample per
+# sample the stage's FIR really takes: its input pulse AND the DAC FIFO's
+# valid (logic_and). util_rfifo's din_valid comes in bursts of 8 per DAC
+# request, so a pulse can fall in a gap: advancing on the pulse alone lost
+# a sample there, a jump in the DVB-S2 symbol timing (33k and 250k failed
+# now and then, 2026-10-07).
 create_bd_cell -type module -reference datv_merge datv_merge_0
 ad_connect util_ad9361_divclk/clk_out datv_merge_0/clk
 ad_connect datv_slice/Dout datv_merge_0/sel_async
-ad_connect axi_ad9361_dac_fifo/din_valid_0 datv_merge_0/req
 ad_connect datv_fifo_out/M_AXIS datv_merge_0/s_axis
 ad_connect datv_merge_0/underflows_gray datv_tx_0/underflows_gray
-if {[info exists xo_corrector]} {
+if {[get_bd_cells -quiet tx_fir_interp_pre] ne ""} {
+    ad_connect tx_fir_interpolator/logic_and_0/Res datv_merge_0/req
+    ad_disconnect tx_rate64_fifo_0/m_axis_tdata tx_fir_interpolator/data_in_0
+    ad_disconnect tx_rate64_fifo_1/m_axis_tdata tx_fir_interpolator/data_in_1
+    ad_connect tx_rate64_fifo_0/m_axis_tdata datv_merge_0/norm_i
+    ad_connect tx_rate64_fifo_1/m_axis_tdata datv_merge_0/norm_q
+    ad_connect GND datv_merge_0/norm_valid
+    ad_connect datv_merge_0/out_i tx_fir_interpolator/data_in_0
+    ad_connect datv_merge_0/out_q tx_fir_interpolator/data_in_1
+} elseif {[info exists xo_corrector]} {
+    ad_connect axi_ad9361_dac_fifo/din_valid_0 datv_merge_0/req
     simple_disconnect_sink iq_xo_corrector/tx_i0_in
     simple_disconnect_sink iq_xo_corrector/tx_q0_in
     simple_disconnect_sink iq_xo_corrector/tx_valid0_in
@@ -136,6 +154,7 @@ if {[info exists xo_corrector]} {
     ad_connect datv_merge_0/out_q     iq_xo_corrector/tx_q0_in
     ad_connect datv_merge_0/out_valid iq_xo_corrector/tx_valid0_in
 } else {
+    ad_connect axi_ad9361_dac_fifo/din_valid_0 datv_merge_0/req
     simple_disconnect_sink axi_ad9361_dac_fifo/din_data_0
     simple_disconnect_sink axi_ad9361_dac_fifo/din_data_1
     simple_disconnect_sink axi_ad9361_dac_fifo/din_valid_in_0

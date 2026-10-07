@@ -17,6 +17,12 @@
 #     pre-stage, the stage that reads it; the FIFO presents data with its
 #     valid, so the DAC-side stage takes it undelayed.
 #
+# Every mode (2026-10-06): the DATV images too. Their transmitter
+# (datv_tx.tcl) joins at the 3.072 MS/s point in front of the DAC-side
+# stage, their receivers (Maia's DDC, T2 resampler) take the first RX
+# stage's 3.072 MS/s output: the DATV signal paths keep the rate they were
+# built and tested at, the converter and the spectrometer see 24 MHz.
+#
 # Both new stages follow the same enable bits as the old ones (bit 0 of
 # 0x790200BC / 0x790240BC): on, the path is x64; trxd always turns them on.
 
@@ -42,25 +48,46 @@ foreach i {0 1} {
     ad_connect rx_fir_decimator_pre/enable_out_$i rx_fir_decimator/enable_in_$i
     ad_connect rx_fir_decimator_pre/data_out_$i   rx_fir_decimator/data_in_$i
 }
+# 18 output bits on the first stage (rate64_bits.v): the second stage gets
+# the old 16 (rounded), Maia twice that (the converter's level, one bit more
+# precision than the old output: its zoom spectrometer and DATV receivers
+# run on these 3.072 MS/s samples).
+add_files -norecurse [file normalize rate64_bits.v]
+update_compile_order -fileset sources_1
+foreach i {0 1} {
+    set f rx_fir_decimator_pre/fir_decimation_$i
+    ad_disconnect $f/m_axis_data_tdata rx_fir_decimator_pre/out_mux_$i/data_in_1
+    set_property CONFIG.Output_Width 18 [get_bd_cells $f]
+    create_bd_cell -type module -reference rate64_rx_bits rx_rate64_bits_$i
+    ad_connect $f/m_axis_data_tdata rx_rate64_bits_$i/y
+    ad_connect rx_rate64_bits_$i/q rx_fir_decimator_pre/out_mux_$i/data_in_1
+    # The second stage takes one sample in 8 clocks: told so, its FIR
+    # shares multipliers (DSPs: the DATV images are nearly full).
+    set_property CONFIG.Sample_Frequency 7.68 [get_bd_cells rx_fir_decimator/fir_decimation_$i]
+}
 
-# The pre-stage's output (3.072 MS/s) is also Maia's zoom input: the
-# spectrometer at 750 Hz bins for the views between the stream and the
-# whole band (maia_hdl config.spectrometer_zoom, register bit use_zoom).
+# The pre-stage's output (3.072 MS/s, at the converter's level) is also
+# Maia's zoom input: the spectrometer at 750 Hz bins for the views between
+# the stream and the whole band (maia_hdl config.spectrometer_zoom, register
+# bit use_zoom), and in the DATV cores the DDC's and the T2 resampler's
+# input (config.datv_from_zoom).
 if {[get_bd_pins -quiet maia_sdr/zoom_re_in] ne ""} {
-    ad_connect rx_fir_decimator_pre/data_out_0  maia_sdr/zoom_re_in
-    ad_connect rx_fir_decimator_pre/data_out_1  maia_sdr/zoom_im_in
+    ad_connect rx_rate64_bits_0/q2x maia_sdr/zoom_re_in
+    ad_connect rx_rate64_bits_1/q2x maia_sdr/zoom_im_in
     ad_connect rx_fir_decimator_pre/valid_out_0 maia_sdr/zoom_valid_in
 }
 
 # ---- TX ---------------------------------------------------------------------
-add_files -norecurse [file normalize sat_shl2.v]
-update_compile_order -fileset sources_1
 ad_add_interpolation_filter "tx_fir_interp_pre" 8 2 1 {61.44} {7.68} \
                     "$::tezuka_hdl_dir/common/interpolator_x8.coe"
 ad_connect util_ad9361_divclk/clk_out tx_fir_interp_pre/aclk
 ad_connect interp8_slice/Dout tx_fir_interp_pre/active
-# one input every 64 clocks (0.384 MS/s at 24.576 MHz)
+# one input every 64 clocks (0.384 MS/s at 24.576 MHz); its FIR told so
+# (multipliers shared, as the RX second stage)
 set_property CONFIG.PULSE_PERIOD 63 [get_bd_cells tx_fir_interp_pre/rate_gen]
+foreach i {0 1} {
+    set_property CONFIG.Sample_Frequency 0.96 [get_bd_cells tx_fir_interp_pre/fir_interpolation_$i]
+}
 
 # the unpacker now feeds the pre-stage
 foreach i {0 1} {
@@ -93,9 +120,18 @@ foreach i {0 1} {
     ad_connect util_ad9361_divclk_reset/peripheral_aresetn tx_rate64_fifo_$i/s_axis_aresetn
     ad_connect tx_fir_interp_pre/fir_interpolation_$i/m_axis_data_tvalid tx_rate64_fifo_$i/s_axis_tvalid
     ad_connect tx_fir_interp_pre/fir_interpolation_$i/m_axis_data_tdata  tx_rate64_fifo_$i/s_axis_tdata
-    # x4 (saturating): the pre-stage's 1/4 gain back (sat_shl2.v)
-    create_bd_cell -type module -reference sat_shl2 tx_rate64_gain_$i
-    ad_connect tx_rate64_fifo_$i/m_axis_tdata tx_rate64_gain_$i/d
-    ad_connect tx_rate64_gain_$i/q tx_fir_interpolator/data_in_$i
-    ad_connect tx_fir_interpolator/valid_out_$i tx_rate64_fifo_$i/m_axis_tready
+    ad_connect tx_rate64_fifo_$i/m_axis_tdata tx_fir_interpolator/data_in_$i
+    # popped when the DAC-side FIR takes the sample (its pulse AND the DAC
+    # FIFO's valid, which has gaps: util_rfifo's bursts), not on every pulse
+    ad_connect tx_fir_interpolator/logic_and_$i/Res tx_rate64_fifo_$i/m_axis_tready
+    # The DAC-side stage at unity gain: 18 output bits, saturated to 16
+    # (rate64_bits.v). The IQ path keeps the pre-stage's 1/4 (the x8
+    # images' level); DATV joins in front of this stage (datv_tx.tcl) at
+    # full scale.
+    set f tx_fir_interpolator/fir_interpolation_$i
+    ad_disconnect $f/m_axis_data_tdata tx_fir_interpolator/out_mux_$i/data_in_1
+    set_property CONFIG.Output_Width 18 [get_bd_cells $f]
+    create_bd_cell -type module -reference rate64_tx_bits tx_rate64_bits_$i
+    ad_connect $f/m_axis_data_tdata tx_rate64_bits_$i/y
+    ad_connect tx_rate64_bits_$i/q tx_fir_interpolator/out_mux_$i/data_in_1
 }

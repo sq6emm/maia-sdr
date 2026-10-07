@@ -46,6 +46,12 @@ def maia_iio_lite_datv():
     # reserved memory.
     config.platform = 0xD5
     config.Enable_RawFFT = False
+    # The x64 images (tezuka_fw_simple rate64.tcl, every mode since
+    # 2026-10-06): the spectrometer on the ADC at 24.576 MS/s and on the
+    # zoom input, the DATV receivers (DDC, T2 resampler) on the zoom input,
+    # the 3.072 MS/s they were built for.
+    config.spectrometer_zoom = True
+    config.datv_from_zoom = True
     return config
 
 def maia_iio_lite_s2():

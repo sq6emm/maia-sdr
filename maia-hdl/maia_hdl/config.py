@@ -38,6 +38,10 @@ class MaiaSDRConfig:
         # The ADC FIFO's valid as the input strobe without the DATV front end
         # (the trx core): one sample per valid, none repeated or lost.
         self.valid_in = False
+        # The DDC and the DVB-T2 resampler take the zoom input (the first
+        # decimation stage, 3.072 MS/s with its own valid) instead of the
+        # ADC samples; needs spectrometer_zoom.
+        self.datv_from_zoom = False
         # With datv_symsync: the DVB-T2 front end too (resampler, OFDM,
         # equalizer; register window 0x40..). False: DVB-S2 only.
         self.datv_t2 = True

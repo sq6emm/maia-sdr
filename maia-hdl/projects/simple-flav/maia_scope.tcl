@@ -24,10 +24,11 @@ set_property -dict [list CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.ENABLE_CLOCK_
                         CONFIG.CLKOUT3_JITTER {108.217} CONFIG.CLKOUT3_PHASE_ERROR {91.100}] [get_bd_cells maia_sdr_clk]
 
 # trx mode: the spectrometer-only core (no DDC ring, no valid_in)
-if {$::fpga_mode eq "trx"} {
-    ad_ip_instance maia_sdr_maia_iio_lite_trx maia_sdr
-} else {
-    ad_ip_instance maia_sdr_maia_iio_lite_datv maia_sdr
+switch -- $::fpga_mode {
+    trx     { ad_ip_instance maia_sdr_maia_iio_lite_trx maia_sdr }
+    s2      { ad_ip_instance maia_sdr_maia_iio_lite_s2 maia_sdr }
+    t2      { ad_ip_instance maia_sdr_maia_iio_lite_t2 maia_sdr }
+    default { ad_ip_instance maia_sdr_maia_iio_lite_datv maia_sdr }
 }
 
 # 12-bit I/Q straight from the ADC FIFO (before the x8 decimator).

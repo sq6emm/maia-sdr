@@ -565,6 +565,13 @@ class MaiaSDR(Elaboratable):
             m.d.comb += [zoom_cdc.re_in.eq(clamp12(self.zoom_re_in)),
                          zoom_cdc.im_in.eq(clamp12(self.zoom_im_in)),
                          zoom_cdc.valid_in.eq(self.zoom_valid_in)]
+        # The DATV receivers' input (DDC, T2 resampler): the ADC samples, or
+        # the zoom input (config.datv_from_zoom).
+        if self.config.datv_from_zoom:
+            assert self.config.spectrometer_zoom
+            datv_in = zoom_cdc
+        else:
+            datv_in = rxiq_cdc
         with m.If(self.sdr_registers['spectrometer']['use_ddc_out']):
             m.d.sync += [
                 spectrometer_re_in.eq(self.ddc.re_out),
@@ -834,9 +841,9 @@ class MaiaSDR(Elaboratable):
                         self.sdr_registers['ddc_coeff']['coeff_wdata']),
                     t2resamp.coeff_wren.eq(
                         self.sdr_registers['ddc_coeff']['coeff_wren'] & t2_coeff),
-                    t2resamp.strobe_in.eq(rxiq_cdc.strobe_out),
-                    t2resamp.re_in.eq(rxiq_cdc.re_out.as_signed()),
-                    t2resamp.im_in.eq(rxiq_cdc.im_out.as_signed()),
+                    t2resamp.strobe_in.eq(datv_in.strobe_out),
+                    t2resamp.re_in.eq(datv_in.re_out.as_signed()),
+                    t2resamp.im_in.eq(datv_in.im_out.as_signed()),
                 ]
                 # The T2 OFDM front end after the resampler (when enabled; else
                 # the resampler's samples straight to the ring).
@@ -963,9 +970,9 @@ class MaiaSDR(Elaboratable):
                 self.sdr_registers['ddc_control']['odd_operations1']),
             self.ddc.odd_operations3.eq(
                 self.sdr_registers['ddc_control']['odd_operations3']),
-            self.ddc.strobe_in.eq(rxiq_cdc.strobe_out),
-            self.ddc.re_in.eq(rxiq_cdc.re_out),
-            self.ddc.im_in.eq(rxiq_cdc.im_out),
+            self.ddc.strobe_in.eq(datv_in.strobe_out),
+            self.ddc.re_in.eq(datv_in.re_out),
+            self.ddc.im_in.eq(datv_in.im_out),
         ]
 
         # Registers s_axi_lite domain
