@@ -119,14 +119,22 @@ foreach i {0 1} {
     ad_connect util_ad9361_divclk/clk_out tx_rate64_fifo_$i/s_axis_aclk
     ad_connect util_ad9361_divclk_reset/peripheral_aresetn tx_rate64_fifo_$i/s_axis_aresetn
     ad_connect tx_fir_interp_pre/fir_interpolation_$i/m_axis_data_tvalid tx_rate64_fifo_$i/s_axis_tvalid
-    ad_connect tx_fir_interp_pre/fir_interpolation_$i/m_axis_data_tdata  tx_rate64_fifo_$i/s_axis_tdata
+    # The pre-stage at unity gain too (18 output bits, saturated to 16,
+    # rate64_bits.v; 2026-10-08): its 1/4 left the IQ path (SSB, CW, TUNE)
+    # 12 dB below the DAC's full scale, where DATV already was: TUNE gave
+    # -27 dBm at 20 dB TX attenuation against -18 dBm for DVB-S2 (Siglent
+    # SVA1032X, Libre at 2330 MHz).
+    set_property CONFIG.Output_Width 18 [get_bd_cells tx_fir_interp_pre/fir_interpolation_$i]
+    create_bd_cell -type module -reference rate64_tx_bits tx_rate64_pre_bits_$i
+    ad_connect tx_fir_interp_pre/fir_interpolation_$i/m_axis_data_tdata tx_rate64_pre_bits_$i/y
+    ad_connect tx_rate64_pre_bits_$i/q tx_rate64_fifo_$i/s_axis_tdata
     ad_connect tx_rate64_fifo_$i/m_axis_tdata tx_fir_interpolator/data_in_$i
     # popped when the DAC-side FIR takes the sample (its pulse AND the DAC
     # FIFO's valid, which has gaps: util_rfifo's bursts), not on every pulse
     ad_connect tx_fir_interpolator/logic_and_$i/Res tx_rate64_fifo_$i/m_axis_tready
     # The DAC-side stage at unity gain: 18 output bits, saturated to 16
-    # (rate64_bits.v). The IQ path keeps the pre-stage's 1/4 (the x8
-    # images' level); DATV joins in front of this stage (datv_tx.tcl) at
+    # (rate64_bits.v). The IQ path (the pre-stage unity as well) and DATV,
+    # which joins in front of this stage (datv_tx.tcl), reach the DAC at
     # full scale.
     set f tx_fir_interpolator/fir_interpolation_$i
     ad_disconnect $f/m_axis_data_tdata tx_fir_interpolator/out_mux_$i/data_in_1

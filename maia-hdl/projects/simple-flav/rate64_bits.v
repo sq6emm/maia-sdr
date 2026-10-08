@@ -29,9 +29,9 @@ endmodule
 
 // TX, DAC-side interpolation stage (3.072 -> 24.576 MS/s): y = 4x the old
 // output; saturated to 16 bits it is the unity-gain x8 interpolator, so a
-// full-scale 3.072 MS/s sample (DATV) reaches the DAC at full scale, and the
-// IQ path's 1/4 is the pre-stage's alone (the level trxd is calibrated for,
-// as with the x8 images).
+// full-scale 3.072 MS/s sample (DATV) reaches the DAC at full scale. The
+// TX pre-stage uses it too (2026-10-08), so the IQ path does as well; the x8
+// images still lose 12 dB there.
 module rate64_tx_bits (
     input  wire [23:0] y,
     output wire [15:0] q

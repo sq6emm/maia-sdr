@@ -16,6 +16,7 @@ M_DEPS += rxfir.tcl
 M_DEPS += xo_corrector.tcl
 M_DEPS += rate64.tcl
 M_DEPS += rate64_bits.v
+M_DEPS += txgain.tcl
 M_DEPS += refmeter.v
 M_DEPS += datv_tx.tcl
 M_DEPS += datv_tx.v
