@@ -67,7 +67,16 @@ if {$fpga_mode eq "datv" || $fpga_mode eq "t2"} {
   adi_project_files $project_name [list "t2router.xdc"]
 }
 
-set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+# t2 is the fullest image (220/220 DSPs, LDPC and P1 paths routing-bound):
+# it closes with a congestion strategy (2026-10-08: WNS +0.005 ns, where
+# the default left -0.498). IMPL_STRATEGY overrides either for one build.
+if {[info exists ::env(IMPL_STRATEGY)] && $::env(IMPL_STRATEGY) ne ""} {
+  set_property strategy $::env(IMPL_STRATEGY) [get_runs impl_1]
+} elseif {$fpga_mode eq "t2"} {
+  set_property strategy Congestion_SpreadLogic_high [get_runs impl_1]
+} else {
+  set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+}
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.TCL.PRE \
   [file normalize [file join [file dirname [info script]] hold_fix.tcl]] \
   [get_runs impl_1]
