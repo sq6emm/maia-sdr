@@ -72,6 +72,8 @@ if {[info exists xo_corrector]} { source xo_corrector.tcl }
 # LibreSDR, every mode: the AD9361 at 24.576 MS/s, x64 to and from the
 # DMAs, so Maia's spectrometer sees ~24 MHz (rate64.tcl)
 if {$project_name eq "libre"} { source rate64.tcl }
+# trx: RX2 decimated as RX1 (2R2T noise canceller reference)
+if {$project_name eq "libre" && $::fpga_mode eq "trx"} { source rx2fir.tcl }
 # FPGA_MODE (system_project.tcl): the DATV parts
 if {$::fpga_mode ne "trx"} {
     source datv_tx.tcl
