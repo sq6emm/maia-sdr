@@ -72,6 +72,10 @@ if {[info exists xo_corrector]} { source xo_corrector.tcl }
 # DMAs, so Maia's spectrometer sees ~24 MHz, plus its zoom input (rate64.tcl,
 # as in projects/simple for the LibreSDR)
 if {$project_name eq "plutoskyr2"} { source rate64.tcl }
+# trx: RX2 decimated as RX1 (2R2T noise canceller reference)
+if {$project_name eq "plutoskyr2" && $::fpga_mode eq "trx"} { source rx2fir.tcl }
+# Pluto trx: no DSP slice left; RX2 through a CIC instead (rx2cic.tcl)
+if {$project_name eq "pluto" && $::fpga_mode eq "trx"} { source rx2cic.tcl }
 # the x8 images: the TX stage at unity gain (txgain.tcl)
 if {$project_name ne "plutoskyr2"} { source txgain.tcl }
 # FPGA_MODE (system_project.tcl): the DATV parts
